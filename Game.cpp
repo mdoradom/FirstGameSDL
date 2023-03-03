@@ -118,6 +118,7 @@ bool Game::Update()
 	//Process Input
 	int fx = 0, fy = 0;
 	if (keys[SDL_SCANCODE_ESCAPE] == KEY_DOWN)	return true;
+	if (keys[SDL_SCANCODE_F1] == KEY_DOWN) god_mode = !god_mode;
 	if (keys[SDL_SCANCODE_UP] == KEY_REPEAT)	fy = -1;
 	if (keys[SDL_SCANCODE_DOWN] == KEY_REPEAT)	fy = 1;
 	if (keys[SDL_SCANCODE_LEFT] == KEY_REPEAT)	fx = -1;
@@ -159,6 +160,11 @@ void Game::Draw()
 	//Clear rendering target
 	SDL_RenderClear(Renderer);
 
+	// Draw god mode red wireframe rectangle
+	if (god_mode) {
+		SDL_SetRenderDrawColor(Renderer, 192, 0, 0, 255);
+	}
+
 	//Draw scene
 	Scene.GetRect(&rc.x, &rc.y, &rc.w, &rc.h);
 	SDL_RenderCopy(Renderer, background_texture, NULL, &rc);
@@ -168,6 +174,9 @@ void Game::Draw()
 	//Draw player
 	Player.GetRect(&rc.x, &rc.y, &rc.w, &rc.h);
 	SDL_RenderCopy(Renderer, spaceship_texture, NULL, &rc);
+	if (god_mode) {
+		SDL_RenderDrawRect(Renderer, &rc);
+	}
 
 	//Draw shots
 	for (int i = 0; i < MAX_SHOTS; ++i)
@@ -176,6 +185,9 @@ void Game::Draw()
 		{
 			Shots[i].GetRect(&rc.x, &rc.y, &rc.w, &rc.h);
 			SDL_RenderCopy(Renderer, shot_texture, NULL, &rc);
+			if (god_mode) {
+				SDL_RenderDrawRect(Renderer, &rc);
+			}
 		}
 	}
 
