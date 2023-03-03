@@ -26,29 +26,67 @@ bool Game::Init()
 		SDL_Log("Unable to create rendering context: %s", SDL_GetError());
 		return false;
 	}
-
-	// Load Images
-	//Initialize PNG loading
-	IMG_Init(IMG_INIT_PNG);
-
-	//Load and save image at specified path to texture
-	SDL_Texture* shot_texture(SDL_CreateTextureFromSurface(Renderer, IMG_Load("shot.png")));
-	SDL_Texture* background_texture(SDL_CreateTextureFromSurface(Renderer, IMG_Load("background.png")));
-	SDL_Texture* spaceship_texture(SDL_CreateTextureFromSurface(Renderer, IMG_Load("spaceship.png")));
 	
-
 	//Initialize keys array
 	for (int i = 0; i < MAX_KEYS; ++i)
 		keys[i] = KEY_IDLE;
 
+	// Load Images
+	if (!LoadImages()) {
+		return false;
+	}
+	
+
 	//Init variables
-	Player.Init(0, 0, 104, 82, 5);
+	Player.Init(0, WINDOW_HEIGHT/2, 104, 82, 5);
 	idx_shot = 0;
+
+	int w;
+	SDL_QueryTexture(background_texture, NULL, NULL, &w, NULL);
+	Scene.Init(0, 0, w, WINDOW_HEIGHT, 4);
+	god_mode = false;
 
 	return true;
 }
+
+bool Game::LoadImages() {
+	// Load Images
+	//Initialize PNG loading
+	if (IMG_Init(IMG_INIT_PNG) != IMG_INIT_PNG) {
+		SDL_Log("IMG_Init: only PNG support: %s\n", IMG_GetError());
+		return false;
+	}
+
+	background_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("background.png"));
+	if (background_texture == NULL) {
+		SDL_Log("CreateTextureFromSurface failed: %s\n", SDL_GetError());
+		return false;
+	}
+
+	shot_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("shot.png"));
+	if (shot_texture == NULL) {
+		SDL_Log("CreateTextureFromSurface failed: %s\n", SDL_GetError());
+		return false;
+	}
+
+	spaceship_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("spaceship.png"));
+	if (spaceship_texture == NULL) {
+		SDL_Log("CreateTextureFromSurface failed: %s\n", SDL_GetError());
+		return false;
+	}
+
+	//Load image at specified path
+
+	return true;
+}
+
 void Game::Release()
 {
+	// Release textures images
+	SDL_DestroyTexture(background_texture);
+	SDL_DestroyTexture(shot_texture);
+	SDL_DestroyTexture(spaceship_texture);
+
 	//Clean up all SDL initialized subsystems
 	SDL_Quit();
 }
@@ -95,6 +133,9 @@ bool Game::Update()
 	}
 
 	//Logic
+	// Scene Scroll
+	Scene.Move(-1, 0);
+	if (Scene.GetX() <= -Scene.GetWidth())	Scene.SetX(0);
 	//Player update
 	Player.Move(fx, fy);
 	//Shots update
@@ -111,27 +152,30 @@ bool Game::Update()
 }
 void Game::Draw()
 {
+	SDL_Rect rc;
+
 	//Set the color used for drawing operations
 	SDL_SetRenderDrawColor(Renderer, 0, 0, 0, 255);
 	//Clear rendering target
 	SDL_RenderClear(Renderer);
 
-	//TODO pillar dlls del profe porque está roto este XD
+	//Draw scene
+	Scene.GetRect(&rc.x, &rc.y, &rc.w, &rc.h);
+	SDL_RenderCopy(Renderer, background_texture, NULL, &rc);
+	rc.x += rc.w;
+	SDL_RenderCopy(Renderer, background_texture, NULL, &rc);
 
 	//Draw player
-	SDL_Rect rc;
 	Player.GetRect(&rc.x, &rc.y, &rc.w, &rc.h);
-	SDL_SetRenderDrawColor(Renderer, 0, 192, 0, 255);
-	SDL_RenderFillRect(Renderer, &rc);
-	
+	SDL_RenderCopy(Renderer, spaceship_texture, NULL, &rc);
+
 	//Draw shots
-	SDL_SetRenderDrawColor(Renderer, 192, 0, 0, 255);
 	for (int i = 0; i < MAX_SHOTS; ++i)
 	{
 		if (Shots[i].IsAlive())
 		{
 			Shots[i].GetRect(&rc.x, &rc.y, &rc.w, &rc.h);
-			SDL_RenderFillRect(Renderer, &rc);
+			SDL_RenderCopy(Renderer, shot_texture, NULL, &rc);
 		}
 	}
 

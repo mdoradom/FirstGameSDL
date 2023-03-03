@@ -6,9 +6,11 @@ public:
 	~Entity();
 
 	void Init(int posx, int posy, int w, int h, int s);
-	void GetRect(int *posx, int *posy, int *w, int *h);
+	void GetRect(int* posx, int* posy, int* w, int* h);
+	void SetX(int posx);
 	int  GetX();
-	void ShutDown(); 
+	int  GetWidth();
+	void ShutDown();
 	bool IsAlive();
 	void Move(int dx, int dy);
 

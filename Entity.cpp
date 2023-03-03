@@ -8,7 +8,7 @@ Entity::Entity()
 Entity::~Entity()
 {
 }
-void Entity::Init(int posx, int posy, int w, int h, int s) 
+void Entity::Init(int posx, int posy, int w, int h, int s)
 {
 	x = posx;
 	y = posy;
@@ -17,7 +17,7 @@ void Entity::Init(int posx, int posy, int w, int h, int s)
 	speed = s;
 	is_alive = true;
 }
-void Entity::GetRect(int *posx, int *posy, int *w, int *h)
+void Entity::GetRect(int* posx, int* posy, int* w, int* h)
 {
 	*posx = x;
 	*posy = y;
@@ -27,6 +27,14 @@ void Entity::GetRect(int *posx, int *posy, int *w, int *h)
 int Entity::GetX()
 {
 	return x;
+}
+int Entity::GetWidth()
+{
+	return width;
+}
+void Entity::SetX(int posx)
+{
+	x = posx;
 }
 void Entity::ShutDown()
 {

@@ -20,18 +20,23 @@ public:
 	~Game();
 
 	bool Init();
+	bool LoadImages();
 	void Release();
-	
+
 	bool Input();
 	bool Update();
 	void Draw();
 
 private:
+	SDL_Texture* background_texture, * spaceship_texture, * shot_texture;
+
 	SDL_Window *Window;
 	SDL_Renderer *Renderer;
 
-	Entity Player, Shots[MAX_SHOTS];
+	Entity Player, Shots[MAX_SHOTS], Scene;
 	int idx_shot;
+
+	bool god_mode;
 
 	enum KEY_STATE { KEY_IDLE, KEY_DOWN, KEY_REPEAT, KEY_UP	};
 	KEY_STATE keys[MAX_KEYS]; 
