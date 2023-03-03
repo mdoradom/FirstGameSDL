@@ -38,7 +38,7 @@ bool Game::Init()
 	
 
 	//Init variables
-	Player.Init(0, WINDOW_HEIGHT/2, 104, 82, 5);
+	Player.Init(0, (WINDOW_WIDTH/2)+(-150), 104, 82, 5);
 	idx_shot = 0;
 
 	int w;
@@ -127,6 +127,8 @@ bool Game::Update()
 	{
 		int x, y, w, h;
 		Player.GetRect(&x, &y, &w, &h);
+		//offset from player: dx, dy = [(29, 3), (29, 59)]
+		// shots spawn point are 76,12 76,68
 		Shots[idx_shot].Init(x + w - 29, y + (h >> 1) - 3, 56, 20, 10);
 		Shots[idx_shot+1].Init(x + w - 29, y + (h >> 1) - 59, 56, 20, 10);
 		idx_shot += 2;
