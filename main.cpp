@@ -6,7 +6,7 @@ int main(int argc, char* args[])
 	if (!game.Init()) return -1;
 
 	bool end = false;
-	while (!end)
+	while (!end)	
 	{
 		end = game.Update();
 		game.Draw();
