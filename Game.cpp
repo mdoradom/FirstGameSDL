@@ -192,6 +192,24 @@ bool Game::Update()
 	if (Scene.GetX() <= -Scene.GetWidth())	Scene.SetX(0);
 
 	//Player update
+	bool izq = Player.GetX() <= 0;
+	bool der = Player.GetX() + Player.GetWidth() >= WINDOW_WIDTH;
+
+	bool arb = Player.GetY() <= 0;
+	bool abaj =Player.GetY() + Player.GetHeight() >= WINDOW_HEIGHT;
+
+	if (izq && fx == -1) {
+		fx = 1;
+	}
+	else if (der && fx == 1) {
+		fx = -1;
+	}
+	else if (arb && fy == -1) {
+		fy = 1;
+	}
+	else if (abaj && fy == 1) {
+		fy = -1;
+	}
 	Player.Move(fx, fy);
 
 	//Shots update
