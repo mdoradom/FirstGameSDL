@@ -110,6 +110,7 @@ bool Game::Input()
 
 	return true;
 }
+
 bool Game::Update()
 {
 	//Read Input
@@ -117,14 +118,15 @@ bool Game::Update()
 
 	//Process Input
 	int fx = 0, fy = 0;
+
+
 	if (keys[SDL_SCANCODE_ESCAPE] == KEY_DOWN)	return true;
-	if (keys[SDL_SCANCODE_F1] == KEY_DOWN) god_mode = !god_mode;
+	if (keys[SDL_SCANCODE_F1] == KEY_DOWN)		god_mode = !god_mode;
 	if (keys[SDL_SCANCODE_UP] == KEY_REPEAT)	fy = -1;
 	if (keys[SDL_SCANCODE_DOWN] == KEY_REPEAT)	fy = 1;
 	if (keys[SDL_SCANCODE_LEFT] == KEY_REPEAT)	fx = -1;
 	if (keys[SDL_SCANCODE_RIGHT] == KEY_REPEAT)	fx = 1;
-	if (keys[SDL_SCANCODE_SPACE] == KEY_DOWN)
-	{
+	if (keys[SDL_SCANCODE_SPACE] == KEY_DOWN) {
 		int x, y, w, h;
 		Player.GetRect(&x, &y, &w, &h);
 		// shots spawn point are [(29, 3), (29, 59)]

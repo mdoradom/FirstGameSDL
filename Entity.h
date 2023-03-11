@@ -20,4 +20,3 @@ private:
 	int speed;
 	bool is_alive;
 };
-
