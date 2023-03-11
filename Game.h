@@ -13,6 +13,8 @@ using namespace std;
 #define WINDOW_HEIGHT	768
 #define MAX_KEYS		256
 #define MAX_SHOTS		3200
+typedef unsigned int uint;
+
 
 class Game
 {
@@ -22,6 +24,7 @@ public:
 
 	bool Init();
 	bool LoadImages();
+	bool LoadAudios();
 	void Release();
 
 	bool Input();
@@ -44,4 +47,6 @@ private:
 
 	enum KEY_STATE { KEY_IDLE, KEY_DOWN, KEY_REPEAT, KEY_UP	};
 	KEY_STATE keys[MAX_KEYS]; 
+
+	uint mLaserSound;
 };

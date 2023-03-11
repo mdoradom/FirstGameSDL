@@ -3,9 +3,15 @@
 #include <stdlib.h>
 #include <time.h>
 #include <stdio.h>
+#include "SDL_mixer/include/SDL_mixer.h"
+#include "ModuleAudio.h"
+#pragma comment(lib, "SDL_mixer/libx86/SDL2_mixer.lib")
+
+#define MIX_DEFAULT_FORMAT  AUDIO_S16LSB
 
 Game::Game() {}
 Game::~Game(){}
+ModuleAudio audio;
 
 bool Game::Init()
 {
@@ -14,6 +20,28 @@ bool Game::Init()
 		SDL_Log("Unable to initialize SDL: %s", SDL_GetError());
 		return false;
 	}
+
+	if (SDL_InitSubSystem(SDL_INIT_AUDIO) < 0) {
+		SDL_Log("SDL_EVENTS could not initializate! SDL_Error: %s\n", SDL_GetError());
+		return false;
+	}
+
+	// load support for the OGG format
+	int flags = MIX_INIT_OGG;
+	int init = Mix_Init(flags);
+
+	if ((init & flags) != flags)
+	{
+		SDL_Log("Could not initialize Mixer lib. Mix_Init: %s", Mix_GetError());
+		return false;
+	}
+
+	if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
+	{
+		SDL_Log("SDL_mixer could not initialize! SDL_mixer Error: %s\n", Mix_GetError());
+		return false;
+	}
+
 	//Create our window: title, x, y, w, h, flags
 	Window = SDL_CreateWindow("Spaceship: arrow keys + space", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
 	if (Window == NULL)
@@ -58,7 +86,19 @@ bool Game::Init()
 	Scene.Init(0, 0, w, WINDOW_HEIGHT, 4);
 	god_mode = false;
 
+	LoadAudios();
+
 	return true;
+}
+
+bool Game::LoadAudios() {
+	mLaserSound =  audio.LoadFx("assets/laser.wav"); // load laser .wav file
+	if (!mLaserSound) {
+		SDL_Log(SDL_GetError());
+	}
+	audio.PlayMusic("assets/stage1.ogg", 3.0F); // play background music
+	return true;
+
 }
 
 bool Game::LoadImages() {
@@ -100,6 +140,9 @@ bool Game::LoadImages() {
 
 void Game::Release()
 {
+	// Release laser sound
+	audio.UnLoadFx(mLaserSound);
+
 	// Release textures images
 	SDL_DestroyTexture(background_texture);
 	SDL_DestroyTexture(shot_texture);
@@ -131,6 +174,7 @@ bool Game::Input()
 }
 bool Game::Update()
 {
+
 	//Read Input
 	if (!Input())	return true;
 
@@ -153,6 +197,7 @@ bool Game::Update()
 			Shots[idx_shot + 1].Init(x + 29, y + 59, 56, 20, 10, 10);
 			idx_shot += 2;
 			idx_shot %= MAX_SHOTS;
+			audio.PlayFx(mLaserSound); // play laser sound
 		}
 	}
 

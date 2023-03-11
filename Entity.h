@@ -1,5 +1,6 @@
 #pragma once
 #include "SDL/include/SDL_render.h"
+
 class Entity
 {
 public:
