@@ -5,9 +5,9 @@ class Entity
 public:
 	Entity();
 	~Entity();
-
 	void Init(int posx, int posy, int w, int h, int s);
-	void Init(int posx, int posy, int w, int h, int s, int mv, int mx);
+	void Init(int posx, int posy, int w, int h, int s, int he);
+	void Init(int posx, int posy, int w, int h, int s, int mv, int mx, int he);
 	void GetRect(int* posx, int* posy, int* w, int* h);
 	void SetX(int posx);
 	int  GetX();

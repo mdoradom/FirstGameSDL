@@ -45,16 +45,12 @@ bool Game::Init()
 	{
 		int x = 52;
 		int y = rand() % 100 + 1;
-		enemies[i].Init(WINDOW_WIDTH - x * i, -y *i, x, 41, 2, -1, 1);
-		// TODO constructor
-		enemies[i].Heal(10);
+		enemies[i].Init(WINDOW_WIDTH - x * i, -y *i, x, 41, 2, -1, 1, 10);
 	}
 
 
 	//Init variables
-	Player.Init(0, WINDOW_HEIGHT >> 1, 104, 82, 5);
-	// TODO cambiar construcotr heal
-	Player.Heal(100);
+	Player.Init(0, WINDOW_HEIGHT >> 1, 104, 82, 5, 100);
 	idx_shot = 0;
 	idx_shotEnemies = 0;
 	int w;
@@ -153,8 +149,8 @@ bool Game::Update()
 			int x, y, w, h;
 			Player.GetRect(&x, &y, &w, &h);
 			// shots spawn point are [(29, 3), (29, 59)]
-			Shots[idx_shot].Init(x + 29, y + 3, 56, 20, 10);
-			Shots[idx_shot + 1].Init(x + 29, y + 59, 56, 20, 10);
+			Shots[idx_shot].Init(x + 29, y + 3, 56, 20, 10, 100);
+			Shots[idx_shot + 1].Init(x + 29, y + 59, 56, 20, 10, 10);
 			idx_shot += 2;
 			idx_shot %= MAX_SHOTS;
 		}
@@ -179,11 +175,11 @@ bool Game::Update()
 
 		if (enemies[i].IsAlive())
 		{
-			if (shoote < 5 && i % 2 == 0) {
+			if (shoote < 3) {
 				int x, y, w, h;
 				enemies[i].GetRect(&x, &y, &w, &h);
-				ShotsEnemies[idx_shotEnemies].Init(x - 29, y + 3, 28, 10, 10);
-				ShotsEnemies[idx_shotEnemies + 1].Init(x - 29, y + 59, 28, 10, 10);
+				ShotsEnemies[idx_shotEnemies].Init(x - 29, y + 3, 28, 10, 10, 1);
+				ShotsEnemies[idx_shotEnemies + 1].Init(x - 29, y + 59, 28, 10, 10, 1);
 				idx_shotEnemies += 2;
 				idx_shotEnemies %= MAX_SHOTS;
 			}
@@ -240,7 +236,7 @@ bool Game::Update()
 		SDL_Rect playerRect = {Player.GetX(), Player.GetY(), Player.GetWidth(), Player.GetHeight()};
 		if (SDL_HasIntersection(&enemyShotRect, &playerRect) && ShotsEnemies[i].IsAlive()) {
 			ShotsEnemies[i].ShutDown();
-			Player.Damage(1);
+			Player.Damage(5);
 		}
 	}
 		

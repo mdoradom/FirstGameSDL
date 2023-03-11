@@ -18,7 +18,19 @@ void Entity::Init(int posx, int posy, int w, int h, int s)
 	speed = s;
 	is_alive = true;
 }
-void Entity::Init(int posx, int posy, int w, int h, int s, int my, int mx)
+
+void Entity::Init(int posx, int posy, int w, int h, int s, int he)
+{
+	x = posx;
+	y = posy;
+	width = w;
+	height = h;
+	speed = s;
+	is_alive = true;
+	health = he;
+}
+
+void Entity::Init(int posx, int posy, int w, int h, int s, int my, int mx, int he)
 {
 	x = posx;
 	y = posy;
@@ -28,7 +40,9 @@ void Entity::Init(int posx, int posy, int w, int h, int s, int my, int mx)
 	movY = my;
 	movX = mx;
 	is_alive = true;
+	health = he;
 }
+
 void Entity::GetRect(int* posx, int* posy, int* w, int* h)
 {
 	*posx = x;
@@ -63,7 +77,7 @@ void Entity::ShutDown()
 }
 bool Entity::IsAlive()
 {
-	if (this->health < 0) {
+	if (this->health <= 0) {
 		ShutDown();
 	}
 	return is_alive;
