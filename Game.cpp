@@ -127,7 +127,7 @@ bool Game::LoadImages() {
 		return false;
 	}
 
-	enemy_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("assets/spaceship.png"));
+	enemy_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("assets/enemy.png"));
 	if (enemy_texture == NULL) {
 		SDL_Log("CreateTextureFromSurface failed: %s\n", SDL_GetError());
 		return false;
