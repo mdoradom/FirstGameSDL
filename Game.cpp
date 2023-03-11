@@ -1,5 +1,8 @@
 #include "Game.h"
 #include <math.h>
+#include <stdlib.h>
+#include <time.h>
+#include <stdio.h>
 
 Game::Game() {}
 Game::~Game(){}
@@ -26,6 +29,7 @@ bool Game::Init()
 		SDL_Log("Unable to create rendering context: %s", SDL_GetError());
 		return false;
 	}
+
 	
 	//Initialize keys array
 	for (int i = 0; i < MAX_KEYS; ++i)
@@ -35,12 +39,20 @@ bool Game::Init()
 	if (!LoadImages()) {
 		return false;
 	}
-	
+
+	//Inicialize the list of enemies
+	for (int i = 0; i < 10; i++)
+	{
+		int x = 52;
+		int y = rand() % 100 + 1;
+		enemies[i].Init(WINDOW_WIDTH - x * i, -y *i, x, 41, 2, -1, 1);
+	}
+
 
 	//Init variables
 	Player.Init(0, WINDOW_HEIGHT >> 1, 104, 82, 5);
 	idx_shot = 0;
-
+	idx_shotEnemies = 0;
 	int w;
 	SDL_QueryTexture(background_texture, NULL, NULL, &w, NULL);
 	Scene.Init(0, 0, w, WINDOW_HEIGHT, 4);
@@ -57,20 +69,26 @@ bool Game::LoadImages() {
 		return false;
 	}
 
-	background_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("assets/background.png"));
+	background_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("background.png"));
 	if (background_texture == NULL) {
 		SDL_Log("CreateTextureFromSurface failed: %s\n", SDL_GetError());
 		return false;
 	}
 
-	shot_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("assets/shot.png"));
+	shot_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("shot.png"));
 	if (shot_texture == NULL) {
 		SDL_Log("CreateTextureFromSurface failed: %s\n", SDL_GetError());
 		return false;
 	}
 
-	spaceship_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("assets/spaceship.png"));
+	spaceship_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("spaceship.png"));
 	if (spaceship_texture == NULL) {
+		SDL_Log("CreateTextureFromSurface failed: %s\n", SDL_GetError());
+		return false;
+	}
+
+	enemy_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("spaceship.png"));
+	if (enemy_texture == NULL) {
 		SDL_Log("CreateTextureFromSurface failed: %s\n", SDL_GetError());
 		return false;
 	}
@@ -86,6 +104,7 @@ void Game::Release()
 	SDL_DestroyTexture(background_texture);
 	SDL_DestroyTexture(shot_texture);
 	SDL_DestroyTexture(spaceship_texture);
+	SDL_DestroyTexture(enemy_texture);
 
 	//Clean up all SDL initialized subsystems
 	SDL_Quit();
@@ -135,6 +154,39 @@ bool Game::Update()
 	}
 
 	//Logic
+	// Enemy move
+
+	for (int i = 0; i < 10; i++)
+	{
+		if (enemies[i].GetY() > WINDOW_HEIGHT - 41) { enemies[i].SetMovY(-1); }
+		else if (enemies[i].GetY() < 0) { enemies[i].SetMovY(1); }
+
+
+		if (enemies[i].GetX() > WINDOW_WIDTH - 52) { enemies[i].SetMovX(-1); }
+		else if (enemies[i].GetX() < WINDOW_WIDTH /2) { enemies[i].SetMovX(1); }
+
+		enemies[i].Move();
+		
+
+		int shoote = rand() % 100 + 1;
+
+		if (shoote < 5 && i%2 == 0) {
+			int x, y, w, h;
+			enemies[i].GetRect(&x, &y, &w, &h);
+			ShotsEnemies[idx_shotEnemies].Init(x - 29, y + 3, 28, 10, 10);
+			ShotsEnemies[idx_shotEnemies + 1].Init(x - 29, y + 59, 28, 10, 10);
+			idx_shotEnemies += 2;
+			idx_shotEnemies %= MAX_SHOTS;
+		}
+
+	}
+
+
+
+
+
+
+
 	// Scene Scroll
 	Scene.Move(-1, 0);
 	if (Scene.GetX() <= -Scene.GetWidth())	Scene.SetX(0);
@@ -147,6 +199,15 @@ bool Game::Update()
 		{
 			Shots[i].Move(1, 0);
 			if (Shots[i].GetX() > WINDOW_WIDTH)	Shots[i].ShutDown();
+		}
+	}
+
+	for (int i = 0; i < MAX_SHOTS; ++i)
+	{
+		if (ShotsEnemies[i].IsAlive())
+		{
+			ShotsEnemies[i].Move(-1, 0);
+			if (ShotsEnemies[i].GetX() > WINDOW_WIDTH)	ShotsEnemies[i].ShutDown();
 		}
 	}
 		
@@ -179,6 +240,17 @@ void Game::Draw()
 		SDL_RenderDrawRect(Renderer, &rc);
 	}
 
+
+	//Draw enemies
+	for (int i = 0; i < 10; i++)
+	{
+		enemies[i].GetRect(&rc.x, &rc.y, &rc.w, &rc.h);
+		SDL_RenderCopy(Renderer, enemy_texture, NULL, &rc);
+		if (god_mode) {
+			SDL_RenderDrawRect(Renderer, &rc);
+		}
+	}
+
 	//Draw shots
 	for (int i = 0; i < MAX_SHOTS; ++i)
 	{
@@ -191,6 +263,23 @@ void Game::Draw()
 			}
 		}
 	}
+
+	for (int i = 0; i < MAX_SHOTS; ++i)
+	{
+		if (ShotsEnemies[i].IsAlive())
+		{
+			ShotsEnemies[i].GetRect(&rc.x, &rc.y, &rc.w, &rc.h);
+			SDL_RenderCopy(Renderer, shot_texture, NULL, &rc);
+			if (god_mode) {
+				SDL_RenderDrawRect(Renderer, &rc);
+			}
+		}
+	}
+	//Test enemy
+
+
+
+
 
 	//Update screen
 	SDL_RenderPresent(Renderer);
