@@ -198,18 +198,24 @@ bool Game::Update()
 	bool arb = Player.GetY() <= 0;
 	bool abaj =Player.GetY() + Player.GetHeight() >= WINDOW_HEIGHT;
 
-	if (izq && fx == -1) {
-		fx = 1;
+	if (izq && arb && fx == -1 && fy == -1) {
+		fx = fy = 0;
+	} else if (izq && abaj && fx == -1 && fy == 1) {
+		fx = fy = 0;
+	} else if (der && arb && fx == 1 && fy == -1) {
+		fx = fy = 0;
+	} else if (der && abaj && fx == 1 && fy == 1) {
+		fx = fy = 0;
+	} else if (izq && fx == -1) {
+		fx = 0;
+	} else if (der && fx == 1) {
+		fx = 0;
+	} else if (arb && fy == -1) {
+		fy = 0;
+	} else if (abaj && fy == 1) {
+		fy = 0;
 	}
-	else if (der && fx == 1) {
-		fx = -1;
-	}
-	else if (arb && fy == -1) {
-		fy = 1;
-	}
-	else if (abaj && fy == 1) {
-		fy = -1;
-	}
+
 	Player.Move(fx, fy);
 
 	//Shots update

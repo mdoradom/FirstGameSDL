@@ -10,6 +10,7 @@ public:
 	void Init(int posx, int posy, int w, int h, int s, int mv, int mx, int he);
 	void GetRect(int* posx, int* posy, int* w, int* h);
 	void SetX(int posx);
+	void SetY(int posy);
 	int  GetX();
 	int  GetY();
 	void SetMovY(int mv);
