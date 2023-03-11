@@ -16,6 +16,10 @@ public:
 	void SetMovY(int mv);
 	void SetMovX(int mv);
 	int  GetWidth();
+	void  SetHeith(int h);
+	int  GetHeith();
+	void  SetRoll(bool roll);
+	bool  GetRoll();
 	int  GetHeight();
 	void ShutDown();
 	bool IsAlive();
@@ -30,7 +34,7 @@ private:
 	int x, y;
 	int width, height;
 	int speed;
-	bool is_alive;
+	bool is_alive, roll;
 	int movY, movX;
 	int health;
 };

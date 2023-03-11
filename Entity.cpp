@@ -107,6 +107,25 @@ void Entity::Move()
 	x += movX * speed;
 }
 
+
+void Entity::SetRoll(bool roll) {
+	this->roll = roll;
+}
+
+bool Entity::GetRoll() {
+	return roll;
+}
+
+
+void Entity::SetHeith(int h)
+{
+	height = h;
+}
+int Entity::GetHeith()
+{
+	return height;
+}
+
 void Entity::RenderHealthBar(SDL_Renderer* renderer) const {
 	SDL_Rect healthBar = { 10, 10, health, 10 };
 	SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
