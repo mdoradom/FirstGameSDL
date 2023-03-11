@@ -69,25 +69,25 @@ bool Game::LoadImages() {
 		return false;
 	}
 
-	background_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("background.png"));
+	background_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("assets/background.png"));
 	if (background_texture == NULL) {
 		SDL_Log("CreateTextureFromSurface failed: %s\n", SDL_GetError());
 		return false;
 	}
 
-	shot_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("shot.png"));
+	shot_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("assets/shot.png"));
 	if (shot_texture == NULL) {
 		SDL_Log("CreateTextureFromSurface failed: %s\n", SDL_GetError());
 		return false;
 	}
 
-	spaceship_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("spaceship.png"));
+	spaceship_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("assets/spaceship.png"));
 	if (spaceship_texture == NULL) {
 		SDL_Log("CreateTextureFromSurface failed: %s\n", SDL_GetError());
 		return false;
 	}
 
-	enemy_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("spaceship.png"));
+	enemy_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("assets/spaceship.png"));
 	if (enemy_texture == NULL) {
 		SDL_Log("CreateTextureFromSurface failed: %s\n", SDL_GetError());
 		return false;
