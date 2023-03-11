@@ -247,7 +247,7 @@ bool Game::Update()
 			SDL_Rect enemyRect = {enemies[j].GetX(), enemies[j].GetY(), enemies[j].GetWidth(), enemies[j].GetHeight()};
 
 			if (SDL_HasIntersection(&shotRect, &enemyRect) && enemies[j].IsAlive() && Shots[i].IsAlive()) {
-				Shots[i].ShutDown();
+				Shots[i].ShutDown();	
 				enemies[j].Damage(10);
 			}
 		}
@@ -260,7 +260,9 @@ bool Game::Update()
 		SDL_Rect playerRect = {Player.GetX(), Player.GetY(), Player.GetWidth(), Player.GetHeight()};
 		if (SDL_HasIntersection(&enemyShotRect, &playerRect) && ShotsEnemies[i].IsAlive()) {
 			ShotsEnemies[i].ShutDown();
-			Player.Damage(5);
+			if (!god_mode) {
+				Player.Damage(5);
+			}
 		}
 	}
 		
