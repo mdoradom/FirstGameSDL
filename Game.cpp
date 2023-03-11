@@ -1,5 +1,8 @@
 #include "Game.h"
 #include <math.h>
+#include <stdlib.h>
+#include <time.h>
+#include <stdio.h>
 
 Game::Game() {}
 Game::~Game(){}
@@ -26,6 +29,7 @@ bool Game::Init()
 		SDL_Log("Unable to create rendering context: %s", SDL_GetError());
 		return false;
 	}
+
 	
 	//Initialize keys array
 	for (int i = 0; i < MAX_KEYS; ++i)
@@ -35,12 +39,20 @@ bool Game::Init()
 	if (!LoadImages()) {
 		return false;
 	}
-	
+
+	//Inicialize the list of enemies
+	for (int i = 0; i < 10; i++)
+	{
+		int x = 52;
+		int y = rand() % 100 + 1;
+		enemies[i].Init(WINDOW_WIDTH - x * i, -y *i, x, 41, 2, -1, 1);
+	}
+
 
 	//Init variables
 	Player.Init(0, WINDOW_HEIGHT >> 1, 104, 82, 5);
 	idx_shot = 0;
-
+	idx_shotEnemies = 0;
 	int w;
 	SDL_QueryTexture(background_texture, NULL, NULL, &w, NULL);
 	Scene.Init(0, 0, w, WINDOW_HEIGHT, 4);
@@ -57,20 +69,26 @@ bool Game::LoadImages() {
 		return false;
 	}
 
-	background_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("assets/background.png"));
+	background_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("background.png"));
 	if (background_texture == NULL) {
 		SDL_Log("CreateTextureFromSurface failed: %s\n", SDL_GetError());
 		return false;
 	}
 
-	shot_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("assets/shot.png"));
+	shot_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("shot.png"));
 	if (shot_texture == NULL) {
 		SDL_Log("CreateTextureFromSurface failed: %s\n", SDL_GetError());
 		return false;
 	}
 
-	spaceship_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("assets/spaceship.png"));
+	spaceship_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("spaceship.png"));
 	if (spaceship_texture == NULL) {
+		SDL_Log("CreateTextureFromSurface failed: %s\n", SDL_GetError());
+		return false;
+	}
+
+	enemy_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("spaceship.png"));
+	if (enemy_texture == NULL) {
 		SDL_Log("CreateTextureFromSurface failed: %s\n", SDL_GetError());
 		return false;
 	}
@@ -86,6 +104,7 @@ void Game::Release()
 	SDL_DestroyTexture(background_texture);
 	SDL_DestroyTexture(shot_texture);
 	SDL_DestroyTexture(spaceship_texture);
+	SDL_DestroyTexture(enemy_texture);
 
 	//Clean up all SDL initialized subsystems
 	SDL_Quit();
@@ -110,7 +129,6 @@ bool Game::Input()
 
 	return true;
 }
-
 bool Game::Update()
 {
 	//Read Input
@@ -118,37 +136,105 @@ bool Game::Update()
 
 	//Process Input
 	int fx = 0, fy = 0;
-
-
 	if (keys[SDL_SCANCODE_ESCAPE] == KEY_DOWN)	return true;
-	if (keys[SDL_SCANCODE_F1] == KEY_DOWN)		god_mode = !god_mode;
+	if (keys[SDL_SCANCODE_F1] == KEY_DOWN) god_mode = !god_mode;
 	if (keys[SDL_SCANCODE_UP] == KEY_REPEAT)	fy = -1;
 	if (keys[SDL_SCANCODE_DOWN] == KEY_REPEAT)	fy = 1;
 	if (keys[SDL_SCANCODE_LEFT] == KEY_REPEAT)	fx = -1;
 	if (keys[SDL_SCANCODE_RIGHT] == KEY_REPEAT)	fx = 1;
-	if (keys[SDL_SCANCODE_SPACE] == KEY_DOWN) {
-		int x, y, w, h;
-		Player.GetRect(&x, &y, &w, &h);
-		// shots spawn point are [(29, 3), (29, 59)]
-		Shots[idx_shot].Init(x + 29, y + 3, 56, 20, 10);
-		Shots[idx_shot+1].Init(x + 29, y + 59, 56, 20, 10);
-		idx_shot += 2;
-		idx_shot %= MAX_SHOTS;
+	if (keys[SDL_SCANCODE_SPACE] == KEY_DOWN)
+	{
+		if (Player.IsAlive())
+		{
+			int x, y, w, h;
+			Player.GetRect(&x, &y, &w, &h);
+			// shots spawn point are [(29, 3), (29, 59)]
+			Shots[idx_shot].Init(x + 29, y + 3, 56, 20, 10);
+			Shots[idx_shot + 1].Init(x + 29, y + 59, 56, 20, 10);
+			idx_shot += 2;
+			idx_shot %= MAX_SHOTS;
+		}
 	}
 
 	//Logic
+	// Enemy move
+
+	for (int i = 0; i < 10; i++)
+	{
+		if (enemies[i].GetY() > WINDOW_HEIGHT - 41) { enemies[i].SetMovY(-1); }
+		else if (enemies[i].GetY() < 0) { enemies[i].SetMovY(1); }
+
+
+		if (enemies[i].GetX() > WINDOW_WIDTH - 52) { enemies[i].SetMovX(-1); }
+		else if (enemies[i].GetX() < WINDOW_WIDTH /2) { enemies[i].SetMovX(1); }
+
+		enemies[i].Move();
+		
+
+		int shoote = rand() % 100 + 1;
+
+		if (enemies[i].IsAlive())
+		{
+			if (shoote < 5 && i % 2 == 0) {
+				int x, y, w, h;
+				enemies[i].GetRect(&x, &y, &w, &h);
+				ShotsEnemies[idx_shotEnemies].Init(x - 29, y + 3, 28, 10, 10);
+				ShotsEnemies[idx_shotEnemies + 1].Init(x - 29, y + 59, 28, 10, 10);
+				idx_shotEnemies += 2;
+				idx_shotEnemies %= MAX_SHOTS;
+			}
+		}
+	}
+
+	
 	// Scene Scroll
 	Scene.Move(-1, 0);
 	if (Scene.GetX() <= -Scene.GetWidth())	Scene.SetX(0);
+
 	//Player update
 	Player.Move(fx, fy);
+
 	//Shots update
+
 	for (int i = 0; i < MAX_SHOTS; ++i)
 	{
 		if (Shots[i].IsAlive())
 		{
 			Shots[i].Move(1, 0);
 			if (Shots[i].GetX() > WINDOW_WIDTH)	Shots[i].ShutDown();
+		}
+	}
+
+	for (int i = 0; i < MAX_SHOTS; ++i)
+	{
+		if (ShotsEnemies[i].IsAlive())
+		{
+			ShotsEnemies[i].Move(-1, 0);
+			if (ShotsEnemies[i].GetX() > WINDOW_WIDTH)	ShotsEnemies[i].ShutDown();
+		}
+	}
+
+	//Enemies death
+	for (int i = 0; i < MAX_SHOTS; ++i)
+	{
+		SDL_Rect shotRect = {Shots[i].GetX(), Shots[i].GetY(), Shots[i].GetWidth()-10, Shots[i].GetHeight()-5 };
+		for (int y = 0; y < 10; ++y)
+		{
+			SDL_Rect enemyRect = {enemies[y].GetX(), enemies[y].GetY(), enemies[y].GetWidth(), enemies[y].GetHeight()};
+
+			if (SDL_HasIntersection(&shotRect, &enemyRect) && enemies[y].IsAlive()) {
+				enemies[y].ShutDown();
+			}
+		}
+	}
+
+	//Player death
+	for (int i = 0; i < MAX_SHOTS; ++i)
+	{
+		SDL_Rect enemyShotRect = {ShotsEnemies[i].GetX(), ShotsEnemies[i].GetY(), ShotsEnemies[i].GetWidth(), ShotsEnemies[i].GetHeight()};
+		SDL_Rect playerRect = {Player.GetX(), Player.GetY(), Player.GetWidth(), Player.GetHeight()};
+		if (SDL_HasIntersection(&enemyShotRect, &playerRect) && enemies[i].IsAlive()) {
+			Player.ShutDown();
 		}
 	}
 		
@@ -175,10 +261,26 @@ void Game::Draw()
 	SDL_RenderCopy(Renderer, background_texture, NULL, &rc);
 
 	//Draw player
-	Player.GetRect(&rc.x, &rc.y, &rc.w, &rc.h);
-	SDL_RenderCopy(Renderer, spaceship_texture, NULL, &rc);
-	if (god_mode) {
-		SDL_RenderDrawRect(Renderer, &rc);
+	if (Player.IsAlive())
+	{
+		Player.GetRect(&rc.x, &rc.y, &rc.w, &rc.h);
+		SDL_RenderCopy(Renderer, spaceship_texture, NULL, &rc);
+		if (god_mode) {
+			SDL_RenderDrawRect(Renderer, &rc);
+		}
+	}
+	
+	//Draw enemies
+	for (int i = 0; i < 10; i++)
+	{
+		if (enemies[i].IsAlive())
+		{
+			enemies[i].GetRect(&rc.x, &rc.y, &rc.w, &rc.h);
+			SDL_RenderCopy(Renderer, enemy_texture, NULL, &rc);
+			if (god_mode) {
+				SDL_RenderDrawRect(Renderer, &rc);
+			}
+		}
 	}
 
 	//Draw shots
@@ -187,6 +289,18 @@ void Game::Draw()
 		if (Shots[i].IsAlive())
 		{
 			Shots[i].GetRect(&rc.x, &rc.y, &rc.w, &rc.h);
+			SDL_RenderCopy(Renderer, shot_texture, NULL, &rc);
+			if (god_mode) {
+				SDL_RenderDrawRect(Renderer, &rc);
+			}
+		}
+	}
+
+	for (int i = 0; i < MAX_SHOTS; ++i)
+	{
+		if (ShotsEnemies[i].IsAlive())
+		{
+			ShotsEnemies[i].GetRect(&rc.x, &rc.y, &rc.w, &rc.h);
 			SDL_RenderCopy(Renderer, shot_texture, NULL, &rc);
 			if (god_mode) {
 				SDL_RenderDrawRect(Renderer, &rc);

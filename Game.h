@@ -7,11 +7,12 @@
 #pragma comment( lib, "SDL/libx86/SDL2main.lib" )
 
 #include "Entity.h"
-
+#include <list>
+using namespace std;
 #define WINDOW_WIDTH	1024
 #define WINDOW_HEIGHT	768
 #define MAX_KEYS		256
-#define MAX_SHOTS		32
+#define MAX_SHOTS		3200
 
 class Game
 {
@@ -28,13 +29,16 @@ public:
 	void Draw();
 
 private:
-	SDL_Texture* background_texture, * spaceship_texture, * shot_texture;
+	SDL_Texture* background_texture, * spaceship_texture, * shot_texture, * enemy_texture;
 
 	SDL_Window *Window;
 	SDL_Renderer *Renderer;
 
-	Entity Player, Shots[MAX_SHOTS], Scene;
-	int idx_shot;
+
+	Entity Player, Shots[MAX_SHOTS], Scene, enemies[10], ShotsEnemies[MAX_SHOTS];
+
+
+	int idx_shot, idx_shotEnemies;
 
 	bool god_mode;
 

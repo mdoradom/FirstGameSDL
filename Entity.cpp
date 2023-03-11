@@ -17,6 +17,17 @@ void Entity::Init(int posx, int posy, int w, int h, int s)
 	speed = s;
 	is_alive = true;
 }
+void Entity::Init(int posx, int posy, int w, int h, int s, int my, int mx)
+{
+	x = posx;
+	y = posy;
+	width = w;
+	height = h;
+	speed = s;
+	movY = my;
+	movX = mx;
+	is_alive = true;
+}
 void Entity::GetRect(int* posx, int* posy, int* w, int* h)
 {
 	*posx = x;
@@ -28,9 +39,18 @@ int Entity::GetX()
 {
 	return x;
 }
+
+int Entity::GetY()
+{
+	return y;
+}
 int Entity::GetWidth()
 {
 	return width;
+}
+int Entity::GetHeight()
+{
+	return height;
 }
 void Entity::SetX(int posx)
 {
@@ -45,8 +65,22 @@ bool Entity::IsAlive()
 	return is_alive;
 }
 
+void Entity::SetMovY(int mv) {
+	movY = mv;
+}
+
+void Entity::SetMovX(int mv) {
+	movX = mv;
+}
+
 void Entity::Move(int dx, int dy)
 {
 	x += dx * speed;
 	y += dy * speed;
+}
+
+void Entity::Move()
+{
+	y += movY * speed;
+	x += movX * speed;
 }
