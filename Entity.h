@@ -14,6 +14,7 @@ public:
 	void SetMovY(int mv);
 	void SetMovX(int mv);
 	int  GetWidth();
+	int  GetHeight();
 	void ShutDown();
 	bool IsAlive();
 	void Move(int dx, int dy);

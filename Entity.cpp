@@ -48,6 +48,10 @@ int Entity::GetWidth()
 {
 	return width;
 }
+int Entity::GetHeight()
+{
+	return height;
+}
 void Entity::SetX(int posx)
 {
 	x = posx;
