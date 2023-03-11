@@ -1,4 +1,5 @@
 #include "Entity.h"
+#include "SDL/include/SDL_render.h"
 
 
 Entity::Entity()
@@ -62,6 +63,9 @@ void Entity::ShutDown()
 }
 bool Entity::IsAlive()
 {
+	if (this->health < 0) {
+		ShutDown();
+	}
 	return is_alive;
 }
 
@@ -83,4 +87,22 @@ void Entity::Move()
 {
 	y += movY * speed;
 	x += movX * speed;
+}
+
+void Entity::RenderHealthBar(SDL_Renderer* renderer) const {
+	SDL_Rect healthBar = { 10, 10, health, 10 };
+	SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+	SDL_RenderFillRect(renderer, &healthBar);
+}
+
+void Entity::Damage(int damage) {
+	if (this->IsAlive()) {
+		this->health -= damage;
+	}
+}
+
+void Entity::Heal(int heal) {
+	if (this->IsAlive()) {
+		this->health += heal;
+	}
 }

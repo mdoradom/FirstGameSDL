@@ -1,4 +1,5 @@
 #pragma once
+#include "SDL/include/SDL_render.h"
 class Entity
 {
 public:
@@ -18,6 +19,9 @@ public:
 	void ShutDown();
 	bool IsAlive();
 	void Move(int dx, int dy);
+	void RenderHealthBar(SDL_Renderer* renderer) const;
+	void Damage(int damage);
+	void Heal(int heal);
 
 	void Move();
 
@@ -27,5 +31,6 @@ private:
 	int speed;
 	bool is_alive;
 	int movY, movX;
+	int health;
 };
 
