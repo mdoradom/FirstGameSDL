@@ -96,7 +96,7 @@ bool Game::DisplayMenu() {
 		SDL_SetRenderDrawColor(Renderer, 0, 0, 0, 255);
 		SDL_RenderClear(Renderer);
 		Scene.GetRect(&rc.x, &rc.y, &rc.w, &rc.h);
-		SDL_RenderCopy(Renderer, menu_texture, NULL, &rc);
+		SDL_RenderCopy(Renderer, menu_texture, NULL, NULL);
 		SDL_RenderPresent(Renderer);
 
 		if (keys[SDL_SCANCODE_1] == KEY_DOWN) {
@@ -135,7 +135,7 @@ bool Game::LoadAudios() {
 	mEnemyLaserSound = audio.LoadFx("assets/Huh.wav"); // load enemy laser file
 	if (!mEnemyLaserSound) {
 		SDL_Log(SDL_GetError());
-	}
+	} 
 	mBossLaserSound = audio.LoadFx("assets/Metal-pipe.wav"); // load boss laser file
 	if (!mBossLaserSound) {
 		SDL_Log(SDL_GetError());
@@ -186,25 +186,37 @@ bool Game::LoadImages() {
 		return false;
 	}
 
-	shot_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("assets/shot.png"));
+	shot_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("assets/cobete.png"));
 	if (shot_texture == NULL) {
 		SDL_Log("CreateTextureFromSurface failed: %s\n", SDL_GetError());
 		return false;
 	}
 
-	spaceship_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("assets/spaceship.png"));
+	enemy_shot_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("assets/spada.png"));
+	if (shot_texture == NULL) {
+		SDL_Log("CreateTextureFromSurface failed: %s\n", SDL_GetError());
+		return false;
+	}
+
+	spaceship_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("assets/capybara.png"));
 	if (spaceship_texture == NULL) {
 		SDL_Log("CreateTextureFromSurface failed: %s\n", SDL_GetError());
 		return false;
 	}
 
-	enemy_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("assets/spaceship.png"));
+	enemy_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("assets/toruga.png"));
 	if (enemy_texture == NULL) {
 		SDL_Log("CreateTextureFromSurface failed: %s\n", SDL_GetError());
 		return false;
 	}
 
-	boss_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("assets/spaceship.png"));
+	boss_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("assets/maxwellcat.png"));
+	if (boss_texture == NULL) {
+		SDL_Log("CreateTextureFromSurface failed: %s\n", SDL_GetError());
+		return false;
+	}
+
+	boss_shot_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("assets/kebab.png"));
 	if (boss_texture == NULL) {
 		SDL_Log("CreateTextureFromSurface failed: %s\n", SDL_GetError());
 		return false;
@@ -262,7 +274,7 @@ bool Game::Update()
 		//Process Input
 		int fx = 0, fy = 0;
 		if (keys[SDL_SCANCODE_ESCAPE] == KEY_DOWN)	return true;
-		if (keys[SDL_SCANCODE_F1] == KEY_DOWN) {
+		if (keys[SDL_SCANCODE_F1] == KEY_DOWN) {    
 			god_mode = !god_mode;
 			if (god_mode == true)
 			{
@@ -570,7 +582,7 @@ void Game::Draw()
 			if (ShotsEnemies[i].IsAlive())
 			{
 				ShotsEnemies[i].GetRect(&rc.x, &rc.y, &rc.w, &rc.h);
-				SDL_RenderCopy(Renderer, shot_texture, NULL, &rc);
+				SDL_RenderCopy(Renderer, enemy_shot_texture, NULL, &rc);
 				if (god_mode) {
 					SDL_RenderDrawRect(Renderer, &rc);
 				}
@@ -582,7 +594,7 @@ void Game::Draw()
 			if (ShotsBoss[i].IsAlive())
 			{
 				ShotsBoss[i].GetRect(&rc.x, &rc.y, &rc.w, &rc.h);
-				SDL_RenderCopy(Renderer, shot_texture, NULL, &rc);
+				SDL_RenderCopy(Renderer, boss_shot_texture, NULL, &rc);
 				if (god_mode) {
 					SDL_RenderDrawRect(Renderer, &rc);
 				}
