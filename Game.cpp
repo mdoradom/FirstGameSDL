@@ -442,6 +442,7 @@ bool Game::Update()
 	}
 
 	if (Player.GetHealth() <= 0) {
+		SDL_DestroyRenderer(Renderer);
 		SDL_Quit();
 		exit(0);
 	}
