@@ -107,6 +107,10 @@ bool Game::LoadAudios() {
 	if (!mBossLaserSound) {
 		SDL_Log(SDL_GetError());
 	}
+	mPlayerHitted = audio.LoadFx("assets/OFF.wav");
+	if (!mPlayerHitted) {
+		SDL_Log(SDL_GetError());
+	}
 
 	return true;
 }
@@ -123,6 +127,7 @@ void Game::SpawnEnemies() {
 	}
 	else if (round == 4) {
 		//Inicialize the Boss
+		audio.PlayMusic("assets/DarkSouls_Gwyn_Lord_of_Cinder.ogg");
 		int bossY = (WINDOW_HEIGHT - 246) / 2;
 		Boss.Init(WINDOW_WIDTH / 1.5, bossY, 312, 246, 3, -1, 1, 1004);
 	}
@@ -222,7 +227,10 @@ bool Game::Update()
 		{
 			audio.PlayMusic("assets/goofy-ahh-beat.ogg");
 		}
-		else
+		else if (god_mode == false && Boss.IsAlive())
+		{
+			audio.PlayMusic("assets/DarkSouls_Gwyn_Lord_of_Cinder.ogg");
+		}
 		{
 			audio.PlayMusic("assets/Volume_Alpha_18_Sweden.ogg", 0.5F);
 		}
@@ -247,7 +255,6 @@ bool Game::Update()
 			audio.PlayFx(mLaserSound); // play laser sound
 		}
 	}
-
 	//Logic
 	// Enemy move
 
@@ -405,12 +412,14 @@ bool Game::Update()
 		SDL_Rect playerRect = {Player.GetX(), Player.GetY(), Player.GetWidth(), Player.GetHeight()};
 		if (SDL_HasIntersection(&enemyShotRect, &playerRect) && ShotsEnemies[i].IsAlive() && !Player.GetRoll()) {
 			ShotsEnemies[i].ShutDown();
-			if (!god_mode) {
+			if (god_mode == false) {
+				audio.PlayFx(mPlayerHitted);
 				Player.Damage(5);
 			}
 		}else if (SDL_HasIntersection(&bossShotRect, &playerRect) && ShotsBoss[i].IsAlive() && !Player.GetRoll()) {
 			ShotsBoss[i].ShutDown();
-			if (!god_mode) {
+			if (god_mode == false) {
+				audio.PlayFx(mPlayerHitted);
 				Player.Damage(25);
 			}
 		}
@@ -431,7 +440,12 @@ bool Game::Update()
 		round += 1;
 		SpawnEnemies();
 	}
-		
+
+	if (Player.GetHealth() <= 0) {
+		SDL_Quit();
+		exit(0);
+	}
+
 	return false;
 }
 void Game::Draw()

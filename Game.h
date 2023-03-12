@@ -48,5 +48,5 @@ private:
 	enum KEY_STATE { KEY_IDLE, KEY_DOWN, KEY_REPEAT, KEY_UP	};
 	KEY_STATE keys[MAX_KEYS]; 
 
-	uint mLaserSound, mEnemyLaserSound, mDeathSound, mBossLaserSound, mBossDeathSound;
+	uint mLaserSound, mEnemyLaserSound, mDeathSound, mBossLaserSound, mBossDeathSound, mPlayerHitted;
 };

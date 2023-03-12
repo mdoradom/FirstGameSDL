@@ -27,7 +27,7 @@ public:
 	void RenderHealthBar(SDL_Renderer* renderer, int x, int y, int anchura) const;
 	void Damage(int damage);
 	void Heal(int heal);
-
+	int GetHealth();
 	void Move();
 
 private:

@@ -137,3 +137,7 @@ void Entity::Heal(int heal) {
 		this->health += heal;
 	}
 }
+
+int Entity::GetHealth() {
+	return health;
+}
