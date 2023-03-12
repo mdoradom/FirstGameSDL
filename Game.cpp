@@ -43,7 +43,7 @@ bool Game::Init()
 	}
 
 	//Create our window: title, x, y, w, h, flags
-	Window = SDL_CreateWindow("Spaceship: arrow keys + space", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
+	Window = SDL_CreateWindow("Se vienen cositas", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
 	if (Window == NULL)
 	{
 		SDL_Log("Unable to create window: %s", SDL_GetError());
@@ -97,21 +97,21 @@ bool Game::Init()
 }
 
 bool Game::LoadAudios() {
-	mLaserSound =  audio.LoadFx("assets/Shart-Sound-Effect.wav"); // load laser file
+	mLaserSound =  audio.LoadFx("assets/Shart-Sound-Effect.wav"); // load player laser file
 	if (!mLaserSound) {
 		SDL_Log(SDL_GetError());
 	}
 	audio.PlayMusic("assets/Volume_Alpha_18_Sweden.ogg", 0.5F); // play background music
 
-	mEnemyDeathSound = audio.LoadFx("assets/LEGO.wav");
-	if (!mEnemyDeathSound) {
+	mDeathSound = audio.LoadFx("assets/LEGO.wav");
+	if (!mDeathSound) {
 		SDL_Log(SDL_GetError());
 	}
-	mEnemyLaserSound = audio.LoadFx("assets/Huh.wav"); // load laser file
+	mEnemyLaserSound = audio.LoadFx("assets/Huh.wav"); // load enemy laser file
 	if (!mEnemyLaserSound) {
 		SDL_Log(SDL_GetError());
 	}
-	mBossLaserSound = audio.LoadFx("assets/Metal-pipe.wav"); // load laser file
+	mBossLaserSound = audio.LoadFx("assets/Metal-pipe.wav"); // load boss laser file
 	if (!mBossLaserSound) {
 		SDL_Log(SDL_GetError());
 	}
@@ -166,7 +166,7 @@ void Game::Release()
 {
 	// Release laser sound
 	audio.UnLoadFx(mLaserSound);
-	audio.UnLoadFx(mEnemyDeathSound);
+	audio.UnLoadFx(mDeathSound);
 
 	// Release textures images
 	SDL_DestroyTexture(background_texture);
@@ -207,7 +207,18 @@ bool Game::Update()
 	//Process Input
 	int fx = 0, fy = 0;
 	if (keys[SDL_SCANCODE_ESCAPE] == KEY_DOWN)	return true;
-	if (keys[SDL_SCANCODE_F1] == KEY_DOWN) god_mode = !god_mode;
+	if (keys[SDL_SCANCODE_F1] == KEY_DOWN) {
+		god_mode = !god_mode;
+		if (god_mode==true)
+		{
+			audio.PlayMusic("assets/goofy-ahh-beat.ogg");
+		}
+		else
+		{
+			audio.PlayMusic("assets/Volume_Alpha_18_Sweden.ogg", 0.5F);
+		}
+	}
+	if (keys[SDL_SCANCODE_F2] == KEY_DOWN) audio.PlayMusic("assets/Never_Gonna_Give_You_Up.ogg");
 	if (keys[SDL_SCANCODE_W] == KEY_REPEAT)	fy = -1;
 	if (keys[SDL_SCANCODE_S] == KEY_REPEAT)	fy = 1;
 	if (keys[SDL_SCANCODE_A] == KEY_REPEAT)	fx = -1;
@@ -342,7 +353,7 @@ bool Game::Update()
 		}
 	}
 
-	//Enemies death
+	//Enemies dmg
 	for (int i = 0; i < MAX_SHOTS; ++i)
 	{
 		SDL_Rect shotRect = {Shots[i].GetX(), Shots[i].GetY(), Shots[i].GetWidth()-10, Shots[i].GetHeight()-5 };
@@ -356,7 +367,7 @@ bool Game::Update()
 			}
 		}
 		
-		//Boss death
+		//Boss dmg
 		SDL_Rect bossRect = { Boss.GetX(), Boss.GetY(), Boss.GetWidth(), Boss.GetHeight() };
 		if (SDL_HasIntersection(&shotRect, &bossRect) && Boss.IsAlive() && Shots[i].IsAlive()) {
 			Shots[i].ShutDown();
@@ -364,7 +375,7 @@ bool Game::Update()
 		}
 	}
 
-	//Player death
+	//Player dmg
 	for (int i = 0; i < MAX_SHOTS; ++i)
 	{
 		SDL_Rect enemyShotRect = {ShotsEnemies[i].GetX(), ShotsEnemies[i].GetY(), ShotsEnemies[i].GetWidth(), ShotsEnemies[i].GetHeight()};
