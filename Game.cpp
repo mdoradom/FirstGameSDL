@@ -3,9 +3,15 @@
 #include <stdlib.h>
 #include <time.h>
 #include <stdio.h>
+#include "SDL_mixer/include/SDL_mixer.h"
+#include "ModuleAudio.h"
+#pragma comment(lib, "SDL_mixer/libx86/SDL2_mixer.lib")
+
+#define MIX_DEFAULT_FORMAT  AUDIO_S16LSB
 
 Game::Game() {}
 Game::~Game(){}
+ModuleAudio audio;
 
 bool Game::Init()
 {
@@ -14,8 +20,30 @@ bool Game::Init()
 		SDL_Log("Unable to initialize SDL: %s", SDL_GetError());
 		return false;
 	}
+
+	if (SDL_InitSubSystem(SDL_INIT_AUDIO) < 0) {
+		SDL_Log("SDL_EVENTS could not initializate! SDL_Error: %s\n", SDL_GetError());
+		return false;
+	}
+
+	// load support for the OGG format
+	int flags = MIX_INIT_OGG;
+	int init = Mix_Init(flags);
+
+	if ((init & flags) != flags)
+	{
+		SDL_Log("Could not initialize Mixer lib. Mix_Init: %s", Mix_GetError());
+		return false;
+	}
+
+	if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
+	{
+		SDL_Log("SDL_mixer could not initialize! SDL_mixer Error: %s\n", Mix_GetError());
+		return false;
+	}
+
 	//Create our window: title, x, y, w, h, flags
-	Window = SDL_CreateWindow("Spaceship: arrow keys + space", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
+	Window = SDL_CreateWindow("Se vienen cositas", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
 	if (Window == NULL)
 	{
 		SDL_Log("Unable to create window: %s", SDL_GetError());
@@ -32,7 +60,7 @@ bool Game::Init()
 
 	inc = 1;
 	round = 1;
-	
+
 	//Initialize keys array
 	for (int i = 0; i < MAX_KEYS; ++i)
 		keys[i] = KEY_IDLE;
@@ -42,60 +70,66 @@ bool Game::Init()
 		return false;
 	}
 
+	//Inicialize the list of enemies & Boss
+	SpawnEnemies();
+
 	//Init variables
 	Player.Init(0, WINDOW_HEIGHT >> 1, 104, 82, 5, 100);
 	idx_shot = 0;
 	idx_shotEnemies = 0;
+	idx_shotBoss = 0;
 	int w;
 	SDL_QueryTexture(background_texture, NULL, NULL, &w, NULL);
 	Scene.Init(0, 0, w, WINDOW_HEIGHT, 4);
 	god_mode = false;
-	Scene.SetExitMenu(false);
 
-
-
-	SpawnEnemies();
-
+	LoadAudios();
 
 	return true;
 }
 
-bool Game::DisplayMenu() {
-
-	if (!Scene.GetExitMenu()) {
-		SDL_Rect rc;
-		SDL_SetRenderDrawColor(Renderer, 0, 0, 0, 255);
-		SDL_RenderClear(Renderer);
-		Scene.GetRect(&rc.x, &rc.y, &rc.w, &rc.h);
-		SDL_RenderCopy(Renderer, menu_texture, NULL, &rc);
-		SDL_RenderPresent(Renderer);
-
-		if (keys[SDL_SCANCODE_1] == KEY_DOWN) {
-			Scene.SetExitMenu(true);
-		}
-
-		if (keys[SDL_SCANCODE_2] == KEY_DOWN) {
-			SDL_Quit();
-			exit(0);
-		}
-
+bool Game::LoadAudios() {
+	mLaserSound =  audio.LoadFx("assets/Shart-Sound-Effect.wav"); // load player laser file
+	if (!mLaserSound) {
+		SDL_Log(SDL_GetError());
 	}
-	
+	audio.PlayMusic("assets/Volume_Alpha_18_Sweden.ogg", 0.5F); // play background music
 
+	mDeathSound = audio.LoadFx("assets/LEGO.wav");
+	if (!mDeathSound) {
+		SDL_Log(SDL_GetError());
+	}
+	mEnemyLaserSound = audio.LoadFx("assets/Huh.wav"); // load enemy laser file
+	if (!mEnemyLaserSound) {
+		SDL_Log(SDL_GetError());
+	}
+	mBossLaserSound = audio.LoadFx("assets/Metal-pipe.wav"); // load boss laser file
+	if (!mBossLaserSound) {
+		SDL_Log(SDL_GetError());
+	}
+	mPlayerHitted = audio.LoadFx("assets/OFF.wav");
+	if (!mPlayerHitted) {
+		SDL_Log(SDL_GetError());
+	}
 
-
-	return Scene.GetExitMenu(); 
-	
-
+	return true;
 }
 
 void Game::SpawnEnemies() {
-	for (int i = 0; i < 10; i++){
-
-		int x = 52;
-		int y = rand() % 100 + 1;
-		enemies[i].Init(WINDOW_WIDTH - x * i, -y * i, x, 41, 2, -1, 1, 10 * round);
-	
+	if (round<4)
+	{
+		for (int i = 0; i < 10; i++)
+		{
+			int x = 52;
+			int y = rand() % 100 + 1;
+			enemies[i].Init(WINDOW_WIDTH - x * i, -y * i, x, 41, 2, -1, 1, 10 * round);
+		}
+	}
+	else if (round == 4) {
+		//Inicialize the Boss
+		audio.PlayMusic("assets/DarkSouls_Gwyn_Lord_of_Cinder.ogg");
+		int bossY = (WINDOW_HEIGHT - 246) / 2;
+		Boss.Init(WINDOW_WIDTH / 1.5, bossY, 312, 246, 3, -1, 1, 1004);
 	}
 }
 
@@ -109,12 +143,6 @@ bool Game::LoadImages() {
 
 	background_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("assets/background.png"));
 	if (background_texture == NULL) {
-		SDL_Log("CreateTextureFromSurface failed: %s\n", SDL_GetError());
-		return false;
-	}
-
-	menu_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("assets/menu_texture.png"));
-	if (menu_texture == NULL) {
 		SDL_Log("CreateTextureFromSurface failed: %s\n", SDL_GetError());
 		return false;
 	}
@@ -137,6 +165,12 @@ bool Game::LoadImages() {
 		return false;
 	}
 
+	boss_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("assets/spaceship.png"));
+	if (boss_texture == NULL) {
+		SDL_Log("CreateTextureFromSurface failed: %s\n", SDL_GetError());
+		return false;
+	}
+
 	//Load image at specified path
 
 	return true;
@@ -144,11 +178,16 @@ bool Game::LoadImages() {
 
 void Game::Release()
 {
+	// Release laser sound
+	audio.UnLoadFx(mLaserSound);
+	audio.UnLoadFx(mDeathSound);
+
 	// Release textures images
 	SDL_DestroyTexture(background_texture);
 	SDL_DestroyTexture(shot_texture);
 	SDL_DestroyTexture(spaceship_texture);
 	SDL_DestroyTexture(enemy_texture);
+	SDL_DestroyTexture(boss_texture);
 
 	//Clean up all SDL initialized subsystems
 	SDL_Quit();
@@ -173,16 +212,30 @@ bool Game::Input()
 
 	return true;
 }
-bool Game::Update(){	
-	if (!Input())	return true;
-	if(DisplayMenu()){
+bool Game::Update()
+{
+
 	//Read Input
-	
+	if (!Input())	return true;
 
 	//Process Input
 	int fx = 0, fy = 0;
 	if (keys[SDL_SCANCODE_ESCAPE] == KEY_DOWN)	return true;
-	if (keys[SDL_SCANCODE_F1] == KEY_DOWN) god_mode = !god_mode;
+	if (keys[SDL_SCANCODE_F1] == KEY_DOWN) {
+		god_mode = !god_mode;
+		if (god_mode==true)
+		{
+			audio.PlayMusic("assets/goofy-ahh-beat.ogg");
+		}
+		else if (god_mode == false && Boss.IsAlive())
+		{
+			audio.PlayMusic("assets/DarkSouls_Gwyn_Lord_of_Cinder.ogg");
+		}
+		{
+			audio.PlayMusic("assets/Volume_Alpha_18_Sweden.ogg", 0.5F);
+		}
+	}
+	if (keys[SDL_SCANCODE_F2] == KEY_DOWN) audio.PlayMusic("assets/Never_Gonna_Give_You_Up.ogg");
 	if (keys[SDL_SCANCODE_W] == KEY_REPEAT)	fy = -1;
 	if (keys[SDL_SCANCODE_S] == KEY_REPEAT)	fy = 1;
 	if (keys[SDL_SCANCODE_A] == KEY_REPEAT)	fx = -1;
@@ -199,9 +252,9 @@ bool Game::Update(){
 			Shots[idx_shot + 1].Init(x + 29, y + 59, 56, 20, 10, 10);
 			idx_shot += 2;
 			idx_shot %= MAX_SHOTS;
+			audio.PlayFx(mLaserSound); // play laser sound
 		}
 	}
-
 	//Logic
 	// Enemy move
 
@@ -228,7 +281,31 @@ bool Game::Update(){
 				ShotsEnemies[idx_shotEnemies + 1].Init(x - 29, y + 59, 28, 10, 10, 1);
 				idx_shotEnemies += 2;
 				idx_shotEnemies %= MAX_SHOTS;
+				audio.PlayFx(mEnemyLaserSound);
 			}
+		}
+	}
+	//Boss move
+	if (Boss.GetY() > WINDOW_HEIGHT - 312) { Boss.SetMovY(-1); }
+	else if (Boss.GetY() < 0) { Boss.SetMovY(1); }
+
+
+	if (Boss.GetX() > WINDOW_WIDTH - 246) { Boss.SetMovX(-1); }
+	else if (Boss.GetX() < WINDOW_WIDTH / 2) { Boss.SetMovX(1); }
+
+	Boss.Move();
+
+	if (Boss.IsAlive())
+	{
+		int shoote = rand() % 100 + 1;
+
+		if (shoote < 7){
+			int x, y, w, h;
+			Boss.GetRect(&x, &y, &w, &h);
+			ShotsBoss[idx_shotBoss].Init(x - 106, y + 123, 168, 60, 10, 1);
+			idx_shotBoss += 2;
+			idx_shotBoss %= MAX_SHOTS;
+			audio.PlayFx(mBossLaserSound);
 		}
 	}
 
@@ -266,11 +343,11 @@ bool Game::Update(){
 
 	if (Player.GetRoll() != NULL && Player.GetRoll())
 	{
-		Player.SetHeith(Player.GetHeith() - inc);
-		if (Player.GetHeith() == 3) {
+		Player.SetHeight(Player.GetHeight() - inc);
+		if (Player.GetHeight() == 3) {
 			inc = -1;
 		}
-		else if (Player.GetHeith() == 82) {
+		else if (Player.GetHeight() == 82) {
 			Player.SetRoll(false);
 			inc = 1;
 		}
@@ -296,7 +373,16 @@ bool Game::Update(){
 		}
 	}
 
-	//Enemies death
+	for (int i = 0; i < MAX_SHOTS; ++i)
+	{
+		if (ShotsBoss[i].IsAlive())
+		{
+			ShotsBoss[i].Move(-1, 0);
+			if (ShotsBoss[i].GetX() > WINDOW_WIDTH)	ShotsBoss[i].ShutDown();
+		}
+	}
+
+	//Enemies dmg
 	for (int i = 0; i < MAX_SHOTS; ++i)
 	{
 		SDL_Rect shotRect = {Shots[i].GetX(), Shots[i].GetY(), Shots[i].GetWidth()-10, Shots[i].GetHeight()-5 };
@@ -306,20 +392,35 @@ bool Game::Update(){
 
 			if (SDL_HasIntersection(&shotRect, &enemyRect) && enemies[j].IsAlive() && Shots[i].IsAlive()) {
 				Shots[i].ShutDown();	
-				enemies[j].Damage(10);
+				enemies[j].Damage(15);
 			}
+		}
+		
+		//Boss dmg
+		SDL_Rect bossRect = { Boss.GetX(), Boss.GetY(), Boss.GetWidth(), Boss.GetHeight() };
+		if (SDL_HasIntersection(&shotRect, &bossRect) && Boss.IsAlive() && Shots[i].IsAlive()) {
+			Shots[i].ShutDown();
+			Boss.Damage(15);
 		}
 	}
 
-	//Player death
+	//Player dmg
 	for (int i = 0; i < MAX_SHOTS; ++i)
 	{
 		SDL_Rect enemyShotRect = {ShotsEnemies[i].GetX(), ShotsEnemies[i].GetY(), ShotsEnemies[i].GetWidth(), ShotsEnemies[i].GetHeight()};
+		SDL_Rect bossShotRect = { ShotsBoss[i].GetX(), ShotsBoss[i].GetY(), ShotsBoss[i].GetWidth(), ShotsBoss[i].GetHeight() };
 		SDL_Rect playerRect = {Player.GetX(), Player.GetY(), Player.GetWidth(), Player.GetHeight()};
 		if (SDL_HasIntersection(&enemyShotRect, &playerRect) && ShotsEnemies[i].IsAlive() && !Player.GetRoll()) {
 			ShotsEnemies[i].ShutDown();
-			if (!god_mode) {
+			if (god_mode == false) {
+				audio.PlayFx(mPlayerHitted);
 				Player.Damage(5);
+			}
+		}else if (SDL_HasIntersection(&bossShotRect, &playerRect) && ShotsBoss[i].IsAlive() && !Player.GetRoll()) {
+			ShotsBoss[i].ShutDown();
+			if (god_mode == false) {
+				audio.PlayFx(mPlayerHitted);
+				Player.Damage(25);
 			}
 		}
 	}
@@ -339,14 +440,17 @@ bool Game::Update(){
 		round += 1;
 		SpawnEnemies();
 	}
+
+	if (Player.GetHealth() <= 0) {
+		SDL_DestroyRenderer(Renderer);
+		SDL_Quit();
+		exit(0);
 	}
 
 	return false;
-
 }
 void Game::Draw()
 {
-	if(Scene.GetExitMenu()){
 	SDL_Rect rc;
 
 	//Set the color used for drawing operations
@@ -388,6 +492,15 @@ void Game::Draw()
 		}
 	}
 
+	//Draw boss
+	if (Boss.IsAlive()){
+		Boss.GetRect(&rc.x, &rc.y, &rc.w, &rc.h);
+		SDL_RenderCopy(Renderer, boss_texture, NULL, &rc);
+		if (god_mode) {
+			SDL_RenderDrawRect(Renderer, &rc);
+		}
+	}
+
 	//Draw shots
 	for (int i = 0; i < MAX_SHOTS; ++i)
 	{
@@ -413,11 +526,23 @@ void Game::Draw()
 		}
 	}
 
-	Player.RenderHealthBar(Renderer);
+	for (int i = 0; i < MAX_SHOTS; ++i)
+	{
+		if (ShotsBoss[i].IsAlive())
+		{
+			ShotsBoss[i].GetRect(&rc.x, &rc.y, &rc.w, &rc.h);
+			SDL_RenderCopy(Renderer, shot_texture, NULL, &rc);
+			if (god_mode) {
+				SDL_RenderDrawRect(Renderer, &rc);
+			}
+		}
+	}
+
+	Player.RenderHealthBar(Renderer, 10, 10, 10);
+	Boss.RenderHealthBar(Renderer, 10, WINDOW_HEIGHT-30, 20);
 
 	//Update screen
 	SDL_RenderPresent(Renderer);
-	}
 
 	SDL_Delay(10);	// 1000/10 = 100 fps max
 }

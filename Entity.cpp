@@ -107,7 +107,6 @@ void Entity::Move()
 	x += movX * speed;
 }
 
-
 void Entity::SetRoll(bool roll) {
 	this->roll = roll;
 }
@@ -116,25 +115,13 @@ bool Entity::GetRoll() {
 	return roll;
 }
 
-void Entity::SetExitMenu(bool ex) {
-	exitMenu = ex;
-}
-
-bool Entity::GetExitMenu() {
-	return exitMenu;
-}
-
-void Entity::SetHeith(int h)
+void Entity::SetHeight(int h)
 {
 	height = h;
 }
-int Entity::GetHeith()
-{
-	return height;
-}
 
-void Entity::RenderHealthBar(SDL_Renderer* renderer) const {
-	SDL_Rect healthBar = { 10, 10, health, 10 };
+void Entity::RenderHealthBar(SDL_Renderer* renderer, int x, int y, int anchura) const {
+	SDL_Rect healthBar = { x, y, health, anchura };
 	SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
 	SDL_RenderFillRect(renderer, &healthBar);
 }
@@ -149,4 +136,8 @@ void Entity::Heal(int heal) {
 	if (this->IsAlive()) {
 		this->health += heal;
 	}
+}
+
+int Entity::GetHealth() {
+	return health;
 }

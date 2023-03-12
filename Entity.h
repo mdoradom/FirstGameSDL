@@ -1,5 +1,6 @@
 #pragma once
 #include "SDL/include/SDL_render.h"
+
 class Entity
 {
 public:
@@ -16,27 +17,24 @@ public:
 	void SetMovY(int mv);
 	void SetMovX(int mv);
 	int  GetWidth();
-	void  SetHeith(int h);
-	int  GetHeith();
-	void  SetRoll(bool roll);
-	bool  GetRoll();
 	int  GetHeight();
 	void ShutDown();
-	void SetExitMenu(bool ex);
-	bool GetExitMenu();
 	bool IsAlive();
 	void Move(int dx, int dy);
-	void RenderHealthBar(SDL_Renderer* renderer) const;
+	void SetRoll(bool roll);
+	bool GetRoll();
+	void SetHeight(int h);
+	void RenderHealthBar(SDL_Renderer* renderer, int x, int y, int anchura) const;
 	void Damage(int damage);
 	void Heal(int heal);
-
+	int GetHealth();
 	void Move();
 
 private:
 	int x, y;
 	int width, height;
 	int speed;
-	bool is_alive, roll, exitMenu;
+	bool is_alive, roll;
 	int movY, movX;
 	int health;
 };
