@@ -31,6 +31,7 @@ bool Game::Init()
 	}
 
 	inc = 1;
+	round = 1;
 	
 	//Initialize keys array
 	for (int i = 0; i < MAX_KEYS; ++i)
@@ -41,14 +42,7 @@ bool Game::Init()
 		return false;
 	}
 
-	//Inicialize the list of enemies
-	for (int i = 0; i < 10; i++)
-	{
-		int x = 52;
-		int y = rand() % 100 + 1;
-		enemies[i].Init(WINDOW_WIDTH - x * i, -y *i, x, 41, 2, -1, 1, 10);
-	}
-
+	SpawnEnemies();
 
 	//Init variables
 	Player.Init(0, WINDOW_HEIGHT >> 1, 104, 82, 5, 100);
@@ -60,6 +54,16 @@ bool Game::Init()
 	god_mode = false;
 
 	return true;
+}
+
+void Game::SpawnEnemies() {
+	for (int i = 0; i < 10; i++){
+
+		int x = 52;
+		int y = rand() % 100 + 1;
+		enemies[i].Init(WINDOW_WIDTH - x * i, -y * i, x, 41, 2, -1, 1, 10 * round);
+	
+	}
 }
 
 bool Game::LoadImages() {
@@ -278,6 +282,22 @@ bool Game::Update()
 				Player.Damage(5);
 			}
 		}
+	}
+
+	//Check if all the enemies are dead
+	bool all_dead = true;
+	for (int i = 0; i < sizeof(enemies) / sizeof(enemies[0]); ++i)
+	{
+		if (enemies[i].IsAlive())
+		{
+			all_dead = false;
+			break;
+		}
+	}
+
+	if (all_dead) {
+		round += 1;
+		SpawnEnemies();
 	}
 		
 	return false;
