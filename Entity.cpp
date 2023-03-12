@@ -107,8 +107,8 @@ void Entity::Move()
 	x += movX * speed;
 }
 
-void Entity::RenderHealthBar(SDL_Renderer* renderer) const {
-	SDL_Rect healthBar = { 10, 10, health, 10 };
+void Entity::RenderHealthBar(SDL_Renderer* renderer, int x, int y, int anchura) const {
+	SDL_Rect healthBar = { x, y, health, anchura };
 	SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
 	SDL_RenderFillRect(renderer, &healthBar);
 }

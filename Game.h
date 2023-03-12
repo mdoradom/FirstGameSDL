@@ -32,21 +32,21 @@ public:
 	void Draw();
 
 private:
-	SDL_Texture* background_texture, * spaceship_texture, * shot_texture, * enemy_texture;
+	SDL_Texture* background_texture, * spaceship_texture, * shot_texture, * enemy_texture, * boss_texture;
 
 	SDL_Window *Window;
 	SDL_Renderer *Renderer;
 
 
-	Entity Player, Shots[MAX_SHOTS], Scene, enemies[10], ShotsEnemies[MAX_SHOTS];
+	Entity Player, Shots[MAX_SHOTS], Scene, enemies[10], ShotsEnemies[MAX_SHOTS], Boss, ShotsBoss[MAX_SHOTS];
 
 
-	int idx_shot, idx_shotEnemies;
+	int idx_shot, idx_shotEnemies, idx_shotBoss;
 
 	bool god_mode;
 
 	enum KEY_STATE { KEY_IDLE, KEY_DOWN, KEY_REPEAT, KEY_UP	};
 	KEY_STATE keys[MAX_KEYS]; 
 
-	uint mLaserSound;
+	uint mLaserSound, mEnemyLaserSound, mEnemyDeathSound, mBossLaserSound, mBossDeathSound;
 };

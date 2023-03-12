@@ -21,7 +21,7 @@ public:
 	void ShutDown();
 	bool IsAlive();
 	void Move(int dx, int dy);
-	void RenderHealthBar(SDL_Renderer* renderer) const;
+	void RenderHealthBar(SDL_Renderer* renderer, int x, int y, int anchura) const;
 	void Damage(int damage);
 	void Heal(int heal);
 

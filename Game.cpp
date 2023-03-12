@@ -76,11 +76,16 @@ bool Game::Init()
 		enemies[i].Init(WINDOW_WIDTH - x * i, -y *i, x, 41, 2, -1, 1, 10);
 	}
 
+	//Inicialize the Boss
+	int bossY = (WINDOW_HEIGHT - 246) / 2;
+	Boss.Init(WINDOW_WIDTH / 1.5, bossY, 312, 246, 3, -1, 1, 1004);
+
 
 	//Init variables
 	Player.Init(0, WINDOW_HEIGHT >> 1, 104, 82, 5, 100);
 	idx_shot = 0;
 	idx_shotEnemies = 0;
+	idx_shotBoss = 0;
 	int w;
 	SDL_QueryTexture(background_texture, NULL, NULL, &w, NULL);
 	Scene.Init(0, 0, w, WINDOW_HEIGHT, 4);
@@ -92,13 +97,26 @@ bool Game::Init()
 }
 
 bool Game::LoadAudios() {
-	mLaserSound =  audio.LoadFx("assets/laser.wav"); // load laser .wav file
+	mLaserSound =  audio.LoadFx("assets/Shart-Sound-Effect.wav"); // load laser file
 	if (!mLaserSound) {
 		SDL_Log(SDL_GetError());
 	}
-	audio.PlayMusic("assets/stage1.ogg", 3.0F); // play background music
-	return true;
+	audio.PlayMusic("assets/Volume_Alpha_18_Sweden.ogg", 0.5F); // play background music
 
+	mEnemyDeathSound = audio.LoadFx("assets/LEGO.wav");
+	if (!mEnemyDeathSound) {
+		SDL_Log(SDL_GetError());
+	}
+	mEnemyLaserSound = audio.LoadFx("assets/Huh.wav"); // load laser file
+	if (!mEnemyLaserSound) {
+		SDL_Log(SDL_GetError());
+	}
+	mBossLaserSound = audio.LoadFx("assets/Metal-pipe.wav"); // load laser file
+	if (!mBossLaserSound) {
+		SDL_Log(SDL_GetError());
+	}
+
+	return true;
 }
 
 bool Game::LoadImages() {
@@ -133,6 +151,12 @@ bool Game::LoadImages() {
 		return false;
 	}
 
+	boss_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("assets/spaceship.png"));
+	if (boss_texture == NULL) {
+		SDL_Log("CreateTextureFromSurface failed: %s\n", SDL_GetError());
+		return false;
+	}
+
 	//Load image at specified path
 
 	return true;
@@ -142,12 +166,14 @@ void Game::Release()
 {
 	// Release laser sound
 	audio.UnLoadFx(mLaserSound);
+	audio.UnLoadFx(mEnemyDeathSound);
 
 	// Release textures images
 	SDL_DestroyTexture(background_texture);
 	SDL_DestroyTexture(shot_texture);
 	SDL_DestroyTexture(spaceship_texture);
 	SDL_DestroyTexture(enemy_texture);
+	SDL_DestroyTexture(boss_texture);
 
 	//Clean up all SDL initialized subsystems
 	SDL_Quit();
@@ -227,7 +253,31 @@ bool Game::Update()
 				ShotsEnemies[idx_shotEnemies + 1].Init(x - 29, y + 59, 28, 10, 10, 1);
 				idx_shotEnemies += 2;
 				idx_shotEnemies %= MAX_SHOTS;
+				audio.PlayFx(mEnemyLaserSound);
 			}
+		}
+	}
+	//Boss move
+	if (Boss.GetY() > WINDOW_HEIGHT - 312) { Boss.SetMovY(-1); }
+	else if (Boss.GetY() < 0) { Boss.SetMovY(1); }
+
+
+	if (Boss.GetX() > WINDOW_WIDTH - 246) { Boss.SetMovX(-1); }
+	else if (Boss.GetX() < WINDOW_WIDTH / 2) { Boss.SetMovX(1); }
+
+	Boss.Move();
+
+	if (Boss.IsAlive())
+	{
+		int shoote = rand() % 100 + 1;
+
+		if (shoote < 7){
+			int x, y, w, h;
+			Boss.GetRect(&x, &y, &w, &h);
+			ShotsBoss[idx_shotBoss].Init(x - 106, y + 123, 168, 60, 10, 1);
+			idx_shotBoss += 2;
+			idx_shotBoss %= MAX_SHOTS;
+			audio.PlayFx(mBossLaserSound);
 		}
 	}
 
@@ -283,6 +333,15 @@ bool Game::Update()
 		}
 	}
 
+	for (int i = 0; i < MAX_SHOTS; ++i)
+	{
+		if (ShotsBoss[i].IsAlive())
+		{
+			ShotsBoss[i].Move(-1, 0);
+			if (ShotsBoss[i].GetX() > WINDOW_WIDTH)	ShotsBoss[i].ShutDown();
+		}
+	}
+
 	//Enemies death
 	for (int i = 0; i < MAX_SHOTS; ++i)
 	{
@@ -293,8 +352,15 @@ bool Game::Update()
 
 			if (SDL_HasIntersection(&shotRect, &enemyRect) && enemies[j].IsAlive() && Shots[i].IsAlive()) {
 				Shots[i].ShutDown();	
-				enemies[j].Damage(10);
+				enemies[j].Damage(15);
 			}
+		}
+		
+		//Boss death
+		SDL_Rect bossRect = { Boss.GetX(), Boss.GetY(), Boss.GetWidth(), Boss.GetHeight() };
+		if (SDL_HasIntersection(&shotRect, &bossRect) && Boss.IsAlive() && Shots[i].IsAlive()) {
+			Shots[i].ShutDown();
+			Boss.Damage(15);
 		}
 	}
 
@@ -302,11 +368,17 @@ bool Game::Update()
 	for (int i = 0; i < MAX_SHOTS; ++i)
 	{
 		SDL_Rect enemyShotRect = {ShotsEnemies[i].GetX(), ShotsEnemies[i].GetY(), ShotsEnemies[i].GetWidth(), ShotsEnemies[i].GetHeight()};
+		SDL_Rect bossShotRect = { ShotsBoss[i].GetX(), ShotsBoss[i].GetY(), ShotsBoss[i].GetWidth(), ShotsBoss[i].GetHeight() };
 		SDL_Rect playerRect = {Player.GetX(), Player.GetY(), Player.GetWidth(), Player.GetHeight()};
 		if (SDL_HasIntersection(&enemyShotRect, &playerRect) && ShotsEnemies[i].IsAlive()) {
 			ShotsEnemies[i].ShutDown();
 			if (!god_mode) {
 				Player.Damage(5);
+			}
+		}else if (SDL_HasIntersection(&bossShotRect, &playerRect) && ShotsBoss[i].IsAlive()) {
+			ShotsBoss[i].ShutDown();
+			if (!god_mode) {
+				Player.Damage(25);
 			}
 		}
 	}
@@ -356,6 +428,15 @@ void Game::Draw()
 		}
 	}
 
+	//Draw boss
+	if (Boss.IsAlive()){
+		Boss.GetRect(&rc.x, &rc.y, &rc.w, &rc.h);
+		SDL_RenderCopy(Renderer, boss_texture, NULL, &rc);
+		if (god_mode) {
+			SDL_RenderDrawRect(Renderer, &rc);
+		}
+	}
+
 	//Draw shots
 	for (int i = 0; i < MAX_SHOTS; ++i)
 	{
@@ -381,7 +462,20 @@ void Game::Draw()
 		}
 	}
 
-	Player.RenderHealthBar(Renderer);
+	for (int i = 0; i < MAX_SHOTS; ++i)
+	{
+		if (ShotsBoss[i].IsAlive())
+		{
+			ShotsBoss[i].GetRect(&rc.x, &rc.y, &rc.w, &rc.h);
+			SDL_RenderCopy(Renderer, shot_texture, NULL, &rc);
+			if (god_mode) {
+				SDL_RenderDrawRect(Renderer, &rc);
+			}
+		}
+	}
+
+	Player.RenderHealthBar(Renderer, 10, 10, 10);
+	Boss.RenderHealthBar(Renderer, 10, WINDOW_HEIGHT-30, 20);
 
 	//Update screen
 	SDL_RenderPresent(Renderer);
