@@ -70,9 +70,6 @@ bool Game::Init()
 		return false;
 	}
 
-	//Inicialize the list of enemies & Boss
-	SpawnEnemies();
-
 	//Init variables
 	Player.Init(0, WINDOW_HEIGHT >> 1, 104, 82, 5, 100);
 	idx_shot = 0;
@@ -82,11 +79,46 @@ bool Game::Init()
 	SDL_QueryTexture(background_texture, NULL, NULL, &w, NULL);
 	Scene.Init(0, 0, w, WINDOW_HEIGHT, 4);
 	god_mode = false;
+	Scene.SetExitMenu(false);
 
 	LoadAudios();
 
+	SpawnEnemies();
+
 	return true;
 }
+
+
+bool Game::DisplayMenu() {
+	
+	if (!Scene.GetExitMenu()) {
+		SDL_Rect rc;
+		SDL_SetRenderDrawColor(Renderer, 0, 0, 0, 255);
+		SDL_RenderClear(Renderer);
+		Scene.GetRect(&rc.x, &rc.y, &rc.w, &rc.h);
+		SDL_RenderCopy(Renderer, menu_texture, NULL, &rc);
+		SDL_RenderPresent(Renderer);
+
+		if (keys[SDL_SCANCODE_1] == KEY_DOWN) {
+			Scene.SetExitMenu(true);
+		}
+
+		if (keys[SDL_SCANCODE_2] == KEY_DOWN) {
+			SDL_Quit();
+			exit(0);
+		}
+
+	}
+
+
+
+
+	return Scene.GetExitMenu();
+	return true;
+
+
+}
+
 
 bool Game::LoadAudios() {
 	mLaserSound =  audio.LoadFx("assets/Shart-Sound-Effect.wav"); // load player laser file
@@ -147,6 +179,12 @@ bool Game::LoadImages() {
 		return false;
 	}
 
+	menu_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("assets/menu_texture.png"));
+	if (menu_texture == NULL) {
+		SDL_Log("CreateTextureFromSurface failed: %s\n", SDL_GetError());
+		return false;
+	}
+
 	shot_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("assets/shot.png"));
 	if (shot_texture == NULL) {
 		SDL_Log("CreateTextureFromSurface failed: %s\n", SDL_GetError());
@@ -188,6 +226,7 @@ void Game::Release()
 	SDL_DestroyTexture(spaceship_texture);
 	SDL_DestroyTexture(enemy_texture);
 	SDL_DestroyTexture(boss_texture);
+	SDL_DestroyTexture(menu_texture);
 
 	//Clean up all SDL initialized subsystems
 	SDL_Quit();
@@ -217,332 +256,343 @@ bool Game::Update()
 
 	//Read Input
 	if (!Input())	return true;
+	if (DisplayMenu()) {
 
-	//Process Input
-	int fx = 0, fy = 0;
-	if (keys[SDL_SCANCODE_ESCAPE] == KEY_DOWN)	return true;
-	if (keys[SDL_SCANCODE_F1] == KEY_DOWN) {
-		god_mode = !god_mode;
-		if (god_mode==true)
-		{
-			audio.PlayMusic("assets/goofy-ahh-beat.ogg");
+		//Process Input
+		int fx = 0, fy = 0;
+		if (keys[SDL_SCANCODE_ESCAPE] == KEY_DOWN)	return true;
+		if (keys[SDL_SCANCODE_F1] == KEY_DOWN) {
+			god_mode = !god_mode;
+			if (god_mode == true)
+			{
+				audio.PlayMusic("assets/goofy-ahh-beat.ogg");
+			}
+			else if (god_mode == false && Boss.IsAlive())
+			{
+				audio.PlayMusic("assets/DarkSouls_Gwyn_Lord_of_Cinder.ogg");
+			}
+			{
+				audio.PlayMusic("assets/Volume_Alpha_18_Sweden.ogg", 0.5F);
+			}
 		}
-		else if (god_mode == false && Boss.IsAlive())
+		if (keys[SDL_SCANCODE_F2] == KEY_DOWN) audio.PlayMusic("assets/Never_Gonna_Give_You_Up.ogg");
+		if (keys[SDL_SCANCODE_W] == KEY_REPEAT)	fy = -1;
+		if (keys[SDL_SCANCODE_S] == KEY_REPEAT)	fy = 1;
+		if (keys[SDL_SCANCODE_A] == KEY_REPEAT)	fx = -1;
+		if (keys[SDL_SCANCODE_D] == KEY_REPEAT)	fx = 1;
+		if (keys[SDL_SCANCODE_E] == KEY_DOWN) Player.SetRoll(true);
+		if (keys[SDL_SCANCODE_SPACE] == KEY_DOWN)
 		{
-			audio.PlayMusic("assets/DarkSouls_Gwyn_Lord_of_Cinder.ogg");
-		}
-		{
-			audio.PlayMusic("assets/Volume_Alpha_18_Sweden.ogg", 0.5F);
-		}
-	}
-	if (keys[SDL_SCANCODE_F2] == KEY_DOWN) audio.PlayMusic("assets/Never_Gonna_Give_You_Up.ogg");
-	if (keys[SDL_SCANCODE_W] == KEY_REPEAT)	fy = -1;
-	if (keys[SDL_SCANCODE_S] == KEY_REPEAT)	fy = 1;
-	if (keys[SDL_SCANCODE_A] == KEY_REPEAT)	fx = -1;
-	if (keys[SDL_SCANCODE_D] == KEY_REPEAT)	fx = 1;
-	if (keys[SDL_SCANCODE_E] == KEY_DOWN) Player.SetRoll(true);
-	if (keys[SDL_SCANCODE_SPACE] == KEY_DOWN)
-	{
-		if (Player.IsAlive() && !Player.GetRoll())
-		{
-			int x, y, w, h;
-			Player.GetRect(&x, &y, &w, &h);
-			// shots spawn point are [(29, 3), (29, 59)]
-			Shots[idx_shot].Init(x + 29, y + 3, 56, 20, 10, 100);
-			Shots[idx_shot + 1].Init(x + 29, y + 59, 56, 20, 10, 10);
-			idx_shot += 2;
-			idx_shot %= MAX_SHOTS;
-			audio.PlayFx(mLaserSound); // play laser sound
-		}
-	}
-	//Logic
-	// Enemy move
-
-	for (int i = 0; i < 10; i++)
-	{
-		if (enemies[i].GetY() > WINDOW_HEIGHT - 41) { enemies[i].SetMovY(-1); }
-		else if (enemies[i].GetY() < 0) { enemies[i].SetMovY(1); }
-
-
-		if (enemies[i].GetX() > WINDOW_WIDTH - 52) { enemies[i].SetMovX(-1); }
-		else if (enemies[i].GetX() < WINDOW_WIDTH /2) { enemies[i].SetMovX(1); }
-
-		enemies[i].Move();
-		
-
-		int shoote = rand() % 100 + 1;
-
-		if (enemies[i].IsAlive())
-		{
-			if (shoote < 3) {
+			if (Player.IsAlive() && !Player.GetRoll())
+			{
 				int x, y, w, h;
-				enemies[i].GetRect(&x, &y, &w, &h);
-				ShotsEnemies[idx_shotEnemies].Init(x - 29, y + 3, 28, 10, 10, 1);
-				ShotsEnemies[idx_shotEnemies + 1].Init(x - 29, y + 59, 28, 10, 10, 1);
-				idx_shotEnemies += 2;
-				idx_shotEnemies %= MAX_SHOTS;
-				audio.PlayFx(mEnemyLaserSound);
+				Player.GetRect(&x, &y, &w, &h);
+				// shots spawn point are [(29, 3), (29, 59)]
+				Shots[idx_shot].Init(x + 29, y + 3, 56, 20, 10, 100);
+				Shots[idx_shot + 1].Init(x + 29, y + 59, 56, 20, 10, 10);
+				idx_shot += 2;
+				idx_shot %= MAX_SHOTS;
+				audio.PlayFx(mLaserSound); // play laser sound
 			}
 		}
-	}
-	//Boss move
-	if (Boss.GetY() > WINDOW_HEIGHT - 312) { Boss.SetMovY(-1); }
-	else if (Boss.GetY() < 0) { Boss.SetMovY(1); }
+		//Logic
+		// Enemy move
 
-
-	if (Boss.GetX() > WINDOW_WIDTH - 246) { Boss.SetMovX(-1); }
-	else if (Boss.GetX() < WINDOW_WIDTH / 2) { Boss.SetMovX(1); }
-
-	Boss.Move();
-
-	if (Boss.IsAlive())
-	{
-		int shoote = rand() % 100 + 1;
-
-		if (shoote < 7){
-			int x, y, w, h;
-			Boss.GetRect(&x, &y, &w, &h);
-			ShotsBoss[idx_shotBoss].Init(x - 106, y + 123, 168, 60, 10, 1);
-			idx_shotBoss += 2;
-			idx_shotBoss %= MAX_SHOTS;
-			audio.PlayFx(mBossLaserSound);
-		}
-	}
-
-	
-	// Scene Scroll
-	Scene.Move(-1, 0);
-	if (Scene.GetX() <= -Scene.GetWidth())	Scene.SetX(0);
-
-	//Player update
-	bool izq = Player.GetX() <= 0;
-	bool der = Player.GetX() + Player.GetWidth() >= WINDOW_WIDTH;
-
-	bool arb = Player.GetY() <= 0;
-	bool abaj =Player.GetY() + Player.GetHeight() >= WINDOW_HEIGHT;
-
-	if (izq && arb && fx == -1 && fy == -1) {
-		fx = fy = 0;
-	} else if (izq && abaj && fx == -1 && fy == 1) {
-		fx = fy = 0;
-	} else if (der && arb && fx == 1 && fy == -1) {
-		fx = fy = 0;
-	} else if (der && abaj && fx == 1 && fy == 1) {
-		fx = fy = 0;
-	} else if (izq && fx == -1) {
-		fx = 0;
-	} else if (der && fx == 1) {
-		fx = 0;
-	} else if (arb && fy == -1) {
-		fy = 0;
-	} else if (abaj && fy == 1) {
-		fy = 0;
-	}
-
-	Player.Move(fx, fy);
-
-	if (Player.GetRoll() != NULL && Player.GetRoll())
-	{
-		Player.SetHeight(Player.GetHeight() - inc);
-		if (Player.GetHeight() == 3) {
-			inc = -1;
-		}
-		else if (Player.GetHeight() == 82) {
-			Player.SetRoll(false);
-			inc = 1;
-		}
-	}
-
-	//Shots update
-
-	for (int i = 0; i < MAX_SHOTS; ++i)
-	{
-		if (Shots[i].IsAlive())
+		for (int i = 0; i < 10; i++)
 		{
-			Shots[i].Move(1, 0);
-			if (Shots[i].GetX() > WINDOW_WIDTH)	Shots[i].ShutDown();
-		}
-	}
+			if (enemies[i].GetY() > WINDOW_HEIGHT - 41) { enemies[i].SetMovY(-1); }
+			else if (enemies[i].GetY() < 0) { enemies[i].SetMovY(1); }
 
-	for (int i = 0; i < MAX_SHOTS; ++i)
-	{
-		if (ShotsEnemies[i].IsAlive())
-		{
-			ShotsEnemies[i].Move(-1, 0);
-			if (ShotsEnemies[i].GetX() > WINDOW_WIDTH)	ShotsEnemies[i].ShutDown();
-		}
-	}
 
-	for (int i = 0; i < MAX_SHOTS; ++i)
-	{
-		if (ShotsBoss[i].IsAlive())
-		{
-			ShotsBoss[i].Move(-1, 0);
-			if (ShotsBoss[i].GetX() > WINDOW_WIDTH)	ShotsBoss[i].ShutDown();
-		}
-	}
+			if (enemies[i].GetX() > WINDOW_WIDTH - 52) { enemies[i].SetMovX(-1); }
+			else if (enemies[i].GetX() < WINDOW_WIDTH / 2) { enemies[i].SetMovX(1); }
 
-	//Enemies dmg
-	for (int i = 0; i < MAX_SHOTS; ++i)
-	{
-		SDL_Rect shotRect = {Shots[i].GetX(), Shots[i].GetY(), Shots[i].GetWidth()-10, Shots[i].GetHeight()-5 };
-		for (int j = 0; j < 10; ++j)
-		{
-			SDL_Rect enemyRect = {enemies[j].GetX(), enemies[j].GetY(), enemies[j].GetWidth(), enemies[j].GetHeight()};
+			enemies[i].Move();
 
-			if (SDL_HasIntersection(&shotRect, &enemyRect) && enemies[j].IsAlive() && Shots[i].IsAlive()) {
-				Shots[i].ShutDown();	
-				enemies[j].Damage(15);
+
+			int shoote = rand() % 100 + 1;
+
+			if (enemies[i].IsAlive())
+			{
+				if (shoote < 3) {
+					int x, y, w, h;
+					enemies[i].GetRect(&x, &y, &w, &h);
+					ShotsEnemies[idx_shotEnemies].Init(x - 29, y + 3, 28, 10, 10, 1);
+					ShotsEnemies[idx_shotEnemies + 1].Init(x - 29, y + 59, 28, 10, 10, 1);
+					idx_shotEnemies += 2;
+					idx_shotEnemies %= MAX_SHOTS;
+					audio.PlayFx(mEnemyLaserSound);
+				}
 			}
 		}
-		
-		//Boss dmg
-		SDL_Rect bossRect = { Boss.GetX(), Boss.GetY(), Boss.GetWidth(), Boss.GetHeight() };
-		if (SDL_HasIntersection(&shotRect, &bossRect) && Boss.IsAlive() && Shots[i].IsAlive()) {
-			Shots[i].ShutDown();
-			Boss.Damage(15);
-		}
-	}
+		//Boss move
+		if (Boss.GetY() > WINDOW_HEIGHT - 312) { Boss.SetMovY(-1); }
+		else if (Boss.GetY() < 0) { Boss.SetMovY(1); }
 
-	//Player dmg
-	for (int i = 0; i < MAX_SHOTS; ++i)
-	{
-		SDL_Rect enemyShotRect = {ShotsEnemies[i].GetX(), ShotsEnemies[i].GetY(), ShotsEnemies[i].GetWidth(), ShotsEnemies[i].GetHeight()};
-		SDL_Rect bossShotRect = { ShotsBoss[i].GetX(), ShotsBoss[i].GetY(), ShotsBoss[i].GetWidth(), ShotsBoss[i].GetHeight() };
-		SDL_Rect playerRect = {Player.GetX(), Player.GetY(), Player.GetWidth(), Player.GetHeight()};
-		if (SDL_HasIntersection(&enemyShotRect, &playerRect) && ShotsEnemies[i].IsAlive() && !Player.GetRoll()) {
-			ShotsEnemies[i].ShutDown();
-			if (god_mode == false) {
-				audio.PlayFx(mPlayerHitted);
-				Player.Damage(5);
-			}
-		}else if (SDL_HasIntersection(&bossShotRect, &playerRect) && ShotsBoss[i].IsAlive() && !Player.GetRoll()) {
-			ShotsBoss[i].ShutDown();
-			if (god_mode == false) {
-				audio.PlayFx(mPlayerHitted);
-				Player.Damage(25);
-			}
-		}
-	}
 
-	//Check if all the enemies are dead
-	bool all_dead = true;
-	for (int i = 0; i < sizeof(enemies) / sizeof(enemies[0]); ++i)
-	{
-		if (enemies[i].IsAlive())
+		if (Boss.GetX() > WINDOW_WIDTH - 246) { Boss.SetMovX(-1); }
+		else if (Boss.GetX() < WINDOW_WIDTH / 2) { Boss.SetMovX(1); }
+
+		Boss.Move();
+
+		if (Boss.IsAlive())
 		{
-			all_dead = false;
-			break;
+			int shoote = rand() % 100 + 1;
+
+			if (shoote < 7) {
+				int x, y, w, h;
+				Boss.GetRect(&x, &y, &w, &h);
+				ShotsBoss[idx_shotBoss].Init(x - 106, y + 123, 168, 60, 10, 1);
+				idx_shotBoss += 2;
+				idx_shotBoss %= MAX_SHOTS;
+				audio.PlayFx(mBossLaserSound);
+			}
+		}
+
+
+		// Scene Scroll
+		Scene.Move(-1, 0);
+		if (Scene.GetX() <= -Scene.GetWidth())	Scene.SetX(0);
+
+		//Player update
+		bool izq = Player.GetX() <= 0;
+		bool der = Player.GetX() + Player.GetWidth() >= WINDOW_WIDTH;
+
+		bool arb = Player.GetY() <= 0;
+		bool abaj = Player.GetY() + Player.GetHeight() >= WINDOW_HEIGHT;
+
+		if (izq && arb && fx == -1 && fy == -1) {
+			fx = fy = 0;
+		}
+		else if (izq && abaj && fx == -1 && fy == 1) {
+			fx = fy = 0;
+		}
+		else if (der && arb && fx == 1 && fy == -1) {
+			fx = fy = 0;
+		}
+		else if (der && abaj && fx == 1 && fy == 1) {
+			fx = fy = 0;
+		}
+		else if (izq && fx == -1) {
+			fx = 0;
+		}
+		else if (der && fx == 1) {
+			fx = 0;
+		}
+		else if (arb && fy == -1) {
+			fy = 0;
+		}
+		else if (abaj && fy == 1) {
+			fy = 0;
+		}
+
+		Player.Move(fx, fy);
+
+		if (Player.GetRoll() != NULL && Player.GetRoll())
+		{
+			Player.SetHeight(Player.GetHeight() - inc);
+			if (Player.GetHeight() == 3) {
+				inc = -1;
+			}
+			else if (Player.GetHeight() == 82) {
+				Player.SetRoll(false);
+				inc = 1;
+			}
+		}
+
+		//Shots update
+
+		for (int i = 0; i < MAX_SHOTS; ++i)
+		{
+			if (Shots[i].IsAlive())
+			{
+				Shots[i].Move(1, 0);
+				if (Shots[i].GetX() > WINDOW_WIDTH)	Shots[i].ShutDown();
+			}
+		}
+
+		for (int i = 0; i < MAX_SHOTS; ++i)
+		{
+			if (ShotsEnemies[i].IsAlive())
+			{
+				ShotsEnemies[i].Move(-1, 0);
+				if (ShotsEnemies[i].GetX() > WINDOW_WIDTH)	ShotsEnemies[i].ShutDown();
+			}
+		}
+
+		for (int i = 0; i < MAX_SHOTS; ++i)
+		{
+			if (ShotsBoss[i].IsAlive())
+			{
+				ShotsBoss[i].Move(-1, 0);
+				if (ShotsBoss[i].GetX() > WINDOW_WIDTH)	ShotsBoss[i].ShutDown();
+			}
+		}
+
+		//Enemies dmg
+		for (int i = 0; i < MAX_SHOTS; ++i)
+		{
+			SDL_Rect shotRect = { Shots[i].GetX(), Shots[i].GetY(), Shots[i].GetWidth() - 10, Shots[i].GetHeight() - 5 };
+			for (int j = 0; j < 10; ++j)
+			{
+				SDL_Rect enemyRect = { enemies[j].GetX(), enemies[j].GetY(), enemies[j].GetWidth(), enemies[j].GetHeight() };
+
+				if (SDL_HasIntersection(&shotRect, &enemyRect) && enemies[j].IsAlive() && Shots[i].IsAlive()) {
+					Shots[i].ShutDown();
+					enemies[j].Damage(15);
+				}
+			}
+
+			//Boss dmg
+			SDL_Rect bossRect = { Boss.GetX(), Boss.GetY(), Boss.GetWidth(), Boss.GetHeight() };
+			if (SDL_HasIntersection(&shotRect, &bossRect) && Boss.IsAlive() && Shots[i].IsAlive()) {
+				Shots[i].ShutDown();
+				Boss.Damage(15);
+			}
+		}
+
+		//Player dmg
+		for (int i = 0; i < MAX_SHOTS; ++i)
+		{
+			SDL_Rect enemyShotRect = { ShotsEnemies[i].GetX(), ShotsEnemies[i].GetY(), ShotsEnemies[i].GetWidth(), ShotsEnemies[i].GetHeight() };
+			SDL_Rect bossShotRect = { ShotsBoss[i].GetX(), ShotsBoss[i].GetY(), ShotsBoss[i].GetWidth(), ShotsBoss[i].GetHeight() };
+			SDL_Rect playerRect = { Player.GetX(), Player.GetY(), Player.GetWidth(), Player.GetHeight() };
+			if (SDL_HasIntersection(&enemyShotRect, &playerRect) && ShotsEnemies[i].IsAlive() && !Player.GetRoll()) {
+				ShotsEnemies[i].ShutDown();
+				if (god_mode == false) {
+					audio.PlayFx(mPlayerHitted);
+					Player.Damage(5);
+				}
+			}
+			else if (SDL_HasIntersection(&bossShotRect, &playerRect) && ShotsBoss[i].IsAlive() && !Player.GetRoll()) {
+				ShotsBoss[i].ShutDown();
+				if (god_mode == false) {
+					audio.PlayFx(mPlayerHitted);
+					Player.Damage(25);
+				}
+			}
+		}
+
+		//Check if all the enemies are dead
+		bool all_dead = true;
+		for (int i = 0; i < sizeof(enemies) / sizeof(enemies[0]); ++i)
+		{
+			if (enemies[i].IsAlive())
+			{
+				all_dead = false;
+				break;
+			}
+		}
+
+		if (all_dead) {
+			round += 1;
+			SpawnEnemies();
+		}
+
+		if (Player.GetHealth() <= 0) {
+			SDL_DestroyRenderer(Renderer);
+			SDL_Quit();
+			exit(0);
 		}
 	}
-
-	if (all_dead) {
-		round += 1;
-		SpawnEnemies();
-	}
-
-	if (Player.GetHealth() <= 0) {
-		SDL_DestroyRenderer(Renderer);
-		SDL_Quit();
-		exit(0);
-	}
-
 	return false;
 }
 void Game::Draw()
 {
-	SDL_Rect rc;
 
-	//Set the color used for drawing operations
-	SDL_SetRenderDrawColor(Renderer, 0, 0, 0, 255);
-	//Clear rendering target
-	SDL_RenderClear(Renderer);
+	if (Scene.GetExitMenu()) {
+		SDL_Rect rc;
 
-	// Draw god mode red wireframe rectangle
-	if (god_mode) {
-		SDL_SetRenderDrawColor(Renderer, 192, 0, 0, 255);
-	}
+		//Set the color used for drawing operations
+		SDL_SetRenderDrawColor(Renderer, 0, 0, 0, 255);
+		//Clear rendering target
+		SDL_RenderClear(Renderer);
 
-	//Draw scene
-	Scene.GetRect(&rc.x, &rc.y, &rc.w, &rc.h);
-	SDL_RenderCopy(Renderer, background_texture, NULL, &rc);
-	rc.x += rc.w;
-	SDL_RenderCopy(Renderer, background_texture, NULL, &rc);
-
-	//Draw player
-	if (Player.IsAlive())
-	{
-		Player.GetRect(&rc.x, &rc.y, &rc.w, &rc.h);
-		SDL_RenderCopy(Renderer, spaceship_texture, NULL, &rc);
+		// Draw god mode red wireframe rectangle
 		if (god_mode) {
-			SDL_RenderDrawRect(Renderer, &rc);
+			SDL_SetRenderDrawColor(Renderer, 192, 0, 0, 255);
 		}
-	}
-	
-	//Draw enemies
-	for (int i = 0; i < 10; i++)
-	{
-		if (enemies[i].IsAlive())
+
+		//Draw scene
+		Scene.GetRect(&rc.x, &rc.y, &rc.w, &rc.h);
+		SDL_RenderCopy(Renderer, background_texture, NULL, &rc);
+		rc.x += rc.w;
+		SDL_RenderCopy(Renderer, background_texture, NULL, &rc);
+
+		//Draw player
+		if (Player.IsAlive())
 		{
-			enemies[i].GetRect(&rc.x, &rc.y, &rc.w, &rc.h);
-			SDL_RenderCopy(Renderer, enemy_texture, NULL, &rc);
+			Player.GetRect(&rc.x, &rc.y, &rc.w, &rc.h);
+			SDL_RenderCopy(Renderer, spaceship_texture, NULL, &rc);
 			if (god_mode) {
 				SDL_RenderDrawRect(Renderer, &rc);
 			}
 		}
-	}
 
-	//Draw boss
-	if (Boss.IsAlive()){
-		Boss.GetRect(&rc.x, &rc.y, &rc.w, &rc.h);
-		SDL_RenderCopy(Renderer, boss_texture, NULL, &rc);
-		if (god_mode) {
-			SDL_RenderDrawRect(Renderer, &rc);
-		}
-	}
-
-	//Draw shots
-	for (int i = 0; i < MAX_SHOTS; ++i)
-	{
-		if (Shots[i].IsAlive())
+		//Draw enemies
+		for (int i = 0; i < 10; i++)
 		{
-			Shots[i].GetRect(&rc.x, &rc.y, &rc.w, &rc.h);
-			SDL_RenderCopy(Renderer, shot_texture, NULL, &rc);
+			if (enemies[i].IsAlive())
+			{
+				enemies[i].GetRect(&rc.x, &rc.y, &rc.w, &rc.h);
+				SDL_RenderCopy(Renderer, enemy_texture, NULL, &rc);
+				if (god_mode) {
+					SDL_RenderDrawRect(Renderer, &rc);
+				}
+			}
+		}
+
+		//Draw boss
+		if (Boss.IsAlive()) {
+			Boss.GetRect(&rc.x, &rc.y, &rc.w, &rc.h);
+			SDL_RenderCopy(Renderer, boss_texture, NULL, &rc);
 			if (god_mode) {
 				SDL_RenderDrawRect(Renderer, &rc);
 			}
 		}
-	}
 
-	for (int i = 0; i < MAX_SHOTS; ++i)
-	{
-		if (ShotsEnemies[i].IsAlive())
+		//Draw shots
+		for (int i = 0; i < MAX_SHOTS; ++i)
 		{
-			ShotsEnemies[i].GetRect(&rc.x, &rc.y, &rc.w, &rc.h);
-			SDL_RenderCopy(Renderer, shot_texture, NULL, &rc);
-			if (god_mode) {
-				SDL_RenderDrawRect(Renderer, &rc);
+			if (Shots[i].IsAlive())
+			{
+				Shots[i].GetRect(&rc.x, &rc.y, &rc.w, &rc.h);
+				SDL_RenderCopy(Renderer, shot_texture, NULL, &rc);
+				if (god_mode) {
+					SDL_RenderDrawRect(Renderer, &rc);
+				}
 			}
 		}
-	}
 
-	for (int i = 0; i < MAX_SHOTS; ++i)
-	{
-		if (ShotsBoss[i].IsAlive())
+		for (int i = 0; i < MAX_SHOTS; ++i)
 		{
-			ShotsBoss[i].GetRect(&rc.x, &rc.y, &rc.w, &rc.h);
-			SDL_RenderCopy(Renderer, shot_texture, NULL, &rc);
-			if (god_mode) {
-				SDL_RenderDrawRect(Renderer, &rc);
+			if (ShotsEnemies[i].IsAlive())
+			{
+				ShotsEnemies[i].GetRect(&rc.x, &rc.y, &rc.w, &rc.h);
+				SDL_RenderCopy(Renderer, shot_texture, NULL, &rc);
+				if (god_mode) {
+					SDL_RenderDrawRect(Renderer, &rc);
+				}
 			}
 		}
+
+		for (int i = 0; i < MAX_SHOTS; ++i)
+		{
+			if (ShotsBoss[i].IsAlive())
+			{
+				ShotsBoss[i].GetRect(&rc.x, &rc.y, &rc.w, &rc.h);
+				SDL_RenderCopy(Renderer, shot_texture, NULL, &rc);
+				if (god_mode) {
+					SDL_RenderDrawRect(Renderer, &rc);
+				}
+			}
+		}
+
+		Player.RenderHealthBar(Renderer, 10, 10, 10);
+		Boss.RenderHealthBar(Renderer, 10, WINDOW_HEIGHT - 30, 20);
+
+		//Update screen
+		SDL_RenderPresent(Renderer);
 	}
-
-	Player.RenderHealthBar(Renderer, 10, 10, 10);
-	Boss.RenderHealthBar(Renderer, 10, WINDOW_HEIGHT-30, 20);
-
-	//Update screen
-	SDL_RenderPresent(Renderer);
-
 	SDL_Delay(10);	// 1000/10 = 100 fps max
 }

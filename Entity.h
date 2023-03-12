@@ -22,6 +22,8 @@ public:
 	bool IsAlive();
 	void Move(int dx, int dy);
 	void SetRoll(bool roll);
+	void SetExitMenu(bool ex);
+	bool GetExitMenu();
 	bool GetRoll();
 	void SetHeight(int h);
 	void RenderHealthBar(SDL_Renderer* renderer, int x, int y, int anchura) const;
@@ -34,7 +36,7 @@ private:
 	int x, y;
 	int width, height;
 	int speed;
-	bool is_alive, roll;
+	bool is_alive, roll, exitMenu;
 	int movY, movX;
 	int health;
 };

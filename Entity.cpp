@@ -87,6 +87,14 @@ bool Entity::IsAlive()
 	return is_alive;
 }
 
+void Entity::SetExitMenu(bool ex) {
+	exitMenu = ex;
+}
+
+bool Entity::GetExitMenu() {
+	return exitMenu;
+}
+
 void Entity::SetMovY(int mv) {
 	movY = mv;
 }
