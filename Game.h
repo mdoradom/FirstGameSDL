@@ -41,7 +41,7 @@ private:
 	Entity Player, Shots[MAX_SHOTS], Scene, enemies[10], ShotsEnemies[MAX_SHOTS], Boss, ShotsBoss[MAX_SHOTS];
 
 
-	int idx_shot, idx_shotEnemies, idx_shotBoss;
+	int idx_shot, idx_shotEnemies, idx_shotBoss, inc;
 
 	bool god_mode;
 

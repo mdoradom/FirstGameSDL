@@ -223,9 +223,10 @@ bool Game::Update()
 	if (keys[SDL_SCANCODE_S] == KEY_REPEAT)	fy = 1;
 	if (keys[SDL_SCANCODE_A] == KEY_REPEAT)	fx = -1;
 	if (keys[SDL_SCANCODE_D] == KEY_REPEAT)	fx = 1;
+	if (keys[SDL_SCANCODE_E] == KEY_DOWN) Player.SetRoll(true);
 	if (keys[SDL_SCANCODE_SPACE] == KEY_DOWN)
 	{
-		if (Player.IsAlive())
+		if (Player.IsAlive() && !Player.GetRoll())
 		{
 			int x, y, w, h;
 			Player.GetRect(&x, &y, &w, &h);
@@ -324,6 +325,18 @@ bool Game::Update()
 
 	Player.Move(fx, fy);
 
+	if (Player.GetRoll() != NULL && Player.GetRoll())
+	{
+		Player.SetHeight(Player.GetHeight() - inc);
+		if (Player.GetHeight() == 3) {
+			inc = -1;
+		}
+		else if (Player.GetHeight() == 82) {
+			Player.SetRoll(false);
+			inc = 1;
+		}
+	}
+
 	//Shots update
 
 	for (int i = 0; i < MAX_SHOTS; ++i)
@@ -381,12 +394,12 @@ bool Game::Update()
 		SDL_Rect enemyShotRect = {ShotsEnemies[i].GetX(), ShotsEnemies[i].GetY(), ShotsEnemies[i].GetWidth(), ShotsEnemies[i].GetHeight()};
 		SDL_Rect bossShotRect = { ShotsBoss[i].GetX(), ShotsBoss[i].GetY(), ShotsBoss[i].GetWidth(), ShotsBoss[i].GetHeight() };
 		SDL_Rect playerRect = {Player.GetX(), Player.GetY(), Player.GetWidth(), Player.GetHeight()};
-		if (SDL_HasIntersection(&enemyShotRect, &playerRect) && ShotsEnemies[i].IsAlive()) {
+		if (SDL_HasIntersection(&enemyShotRect, &playerRect) && ShotsEnemies[i].IsAlive() && !Player.GetRoll()) {
 			ShotsEnemies[i].ShutDown();
 			if (!god_mode) {
 				Player.Damage(5);
 			}
-		}else if (SDL_HasIntersection(&bossShotRect, &playerRect) && ShotsBoss[i].IsAlive()) {
+		}else if (SDL_HasIntersection(&bossShotRect, &playerRect) && ShotsBoss[i].IsAlive() && !Player.GetRoll()) {
 			ShotsBoss[i].ShutDown();
 			if (!god_mode) {
 				Player.Damage(25);
