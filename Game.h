@@ -27,6 +27,7 @@ public:
 	bool Input();
 	bool Update();
 	void Draw();
+	void WaveEnemy();
 
 private:
 	SDL_Texture* background_texture, * spaceship_texture, * shot_texture, * enemy_texture;

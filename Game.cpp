@@ -265,6 +265,7 @@ bool Game::Update()
 			}
 		}
 	}
+	WaveEnemy;
 		
 	return false;
 }
@@ -342,4 +343,17 @@ void Game::Draw()
 	SDL_RenderPresent(Renderer);
 
 	SDL_Delay(10);	// 1000/10 = 100 fps max
+}
+void Game::WaveEnemy(){
+	while (true) {
+		for (int i = 0; i < 10; i++) {
+			if (enemies[i].IsAlive() == false) {
+				for (int j = 0; j < 10; j++) {
+					int x = 52;
+					int y = rand() % 100 + 1;
+					enemies[i].Init(WINDOW_WIDTH - j * i, -y * i, j, 41, 2, -1, 1, 10);
+				}
+			}
+		}
+	}
 }
