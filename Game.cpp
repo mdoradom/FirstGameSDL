@@ -314,11 +314,10 @@ bool Game::Update()
 
 			if (enemies[i].IsAlive())
 			{
-				if (shoote < 3) {
+				if (shoote < 6) {
 					int x, y, w, h;
 					enemies[i].GetRect(&x, &y, &w, &h);
-					ShotsEnemies[idx_shotEnemies].Init(x - 29, y + 3, 28, 10, 10, 1);
-					ShotsEnemies[idx_shotEnemies + 1].Init(x - 29, y + 59, 28, 10, 10, 1);
+					ShotsEnemies[idx_shotEnemies].Init(x - 29, y, 28, 10, 10, 1);
 					idx_shotEnemies += 2;
 					idx_shotEnemies %= MAX_SHOTS;
 					audio.PlayFx(mEnemyLaserSound);
