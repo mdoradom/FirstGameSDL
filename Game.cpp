@@ -58,7 +58,9 @@ bool Game::Init()
 		return false;
 	}
 
-	
+	inc = 1;
+	round = 1;
+
 	//Initialize keys array
 	for (int i = 0; i < MAX_KEYS; ++i)
 		keys[i] = KEY_IDLE;
@@ -68,18 +70,8 @@ bool Game::Init()
 		return false;
 	}
 
-	//Inicialize the list of enemies
-	for (int i = 0; i < 10; i++)
-	{
-		int x = 52;
-		int y = rand() % 100 + 1;
-		enemies[i].Init(WINDOW_WIDTH - x * i, -y *i, x, 41, 2, -1, 1, 10);
-	}
-
-	//Inicialize the Boss
-	int bossY = (WINDOW_HEIGHT - 246) / 2;
-	Boss.Init(WINDOW_WIDTH / 1.5, bossY, 312, 246, 3, -1, 1, 1004);
-
+	//Inicialize the list of enemies & Boss
+	SpawnEnemies();
 
 	//Init variables
 	Player.Init(0, WINDOW_HEIGHT >> 1, 104, 82, 5, 100);
@@ -117,6 +109,23 @@ bool Game::LoadAudios() {
 	}
 
 	return true;
+}
+
+void Game::SpawnEnemies() {
+	if (round<4)
+	{
+		for (int i = 0; i < 10; i++)
+		{
+			int x = 52;
+			int y = rand() % 100 + 1;
+			enemies[i].Init(WINDOW_WIDTH - x * i, -y * i, x, 41, 2, -1, 1, 10 * round);
+		}
+	}
+	else if (round == 4) {
+		//Inicialize the Boss
+		int bossY = (WINDOW_HEIGHT - 246) / 2;
+		Boss.Init(WINDOW_WIDTH / 1.5, bossY, 312, 246, 3, -1, 1, 1004);
+	}
 }
 
 bool Game::LoadImages() {
@@ -405,6 +414,22 @@ bool Game::Update()
 				Player.Damage(25);
 			}
 		}
+	}
+
+	//Check if all the enemies are dead
+	bool all_dead = true;
+	for (int i = 0; i < sizeof(enemies) / sizeof(enemies[0]); ++i)
+	{
+		if (enemies[i].IsAlive())
+		{
+			all_dead = false;
+			break;
+		}
+	}
+
+	if (all_dead) {
+		round += 1;
+		SpawnEnemies();
 	}
 		
 	return false;

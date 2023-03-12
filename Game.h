@@ -12,7 +12,7 @@ using namespace std;
 #define WINDOW_WIDTH	1024
 #define WINDOW_HEIGHT	768
 #define MAX_KEYS		256
-#define MAX_SHOTS		3200
+#define MAX_SHOTS		320
 typedef unsigned int uint;
 
 
@@ -26,7 +26,7 @@ public:
 	bool LoadImages();
 	bool LoadAudios();
 	void Release();
-
+	void SpawnEnemies();
 	bool Input();
 	bool Update();
 	void Draw();
@@ -41,7 +41,7 @@ private:
 	Entity Player, Shots[MAX_SHOTS], Scene, enemies[10], ShotsEnemies[MAX_SHOTS], Boss, ShotsBoss[MAX_SHOTS];
 
 
-	int idx_shot, idx_shotEnemies, idx_shotBoss, inc;
+	int idx_shot, idx_shotEnemies, idx_shotBoss, inc, round;
 
 	bool god_mode;
 
