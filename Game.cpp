@@ -42,8 +42,6 @@ bool Game::Init()
 		return false;
 	}
 
-	SpawnEnemies();
-
 	//Init variables
 	Player.Init(0, WINDOW_HEIGHT >> 1, 104, 82, 5, 100);
 	idx_shot = 0;
@@ -52,8 +50,43 @@ bool Game::Init()
 	SDL_QueryTexture(background_texture, NULL, NULL, &w, NULL);
 	Scene.Init(0, 0, w, WINDOW_HEIGHT, 4);
 	god_mode = false;
+	Scene.SetExitMenu(false);
+
+
+
+	SpawnEnemies();
+
 
 	return true;
+}
+
+bool Game::DisplayMenu() {
+
+	if (!Scene.GetExitMenu()) {
+		SDL_Rect rc;
+		SDL_SetRenderDrawColor(Renderer, 0, 0, 0, 255);
+		SDL_RenderClear(Renderer);
+		Scene.GetRect(&rc.x, &rc.y, &rc.w, &rc.h);
+		SDL_RenderCopy(Renderer, menu_texture, NULL, &rc);
+		SDL_RenderPresent(Renderer);
+
+		if (keys[SDL_SCANCODE_1] == KEY_DOWN) {
+			Scene.SetExitMenu(true);
+		}
+
+		if (keys[SDL_SCANCODE_2] == KEY_DOWN) {
+			SDL_Quit();
+			exit(0);
+		}
+
+	}
+	
+
+
+
+	return Scene.GetExitMenu(); 
+	
+
 }
 
 void Game::SpawnEnemies() {
@@ -76,6 +109,12 @@ bool Game::LoadImages() {
 
 	background_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("assets/background.png"));
 	if (background_texture == NULL) {
+		SDL_Log("CreateTextureFromSurface failed: %s\n", SDL_GetError());
+		return false;
+	}
+
+	menu_texture = SDL_CreateTextureFromSurface(Renderer, IMG_Load("assets/menu_texture.png"));
+	if (menu_texture == NULL) {
 		SDL_Log("CreateTextureFromSurface failed: %s\n", SDL_GetError());
 		return false;
 	}
@@ -134,10 +173,11 @@ bool Game::Input()
 
 	return true;
 }
-bool Game::Update()
-{
-	//Read Input
+bool Game::Update(){	
 	if (!Input())	return true;
+	if(DisplayMenu()){
+	//Read Input
+	
 
 	//Process Input
 	int fx = 0, fy = 0;
@@ -299,11 +339,14 @@ bool Game::Update()
 		round += 1;
 		SpawnEnemies();
 	}
-		
+	}
+
 	return false;
+
 }
 void Game::Draw()
 {
+	if(Scene.GetExitMenu()){
 	SDL_Rect rc;
 
 	//Set the color used for drawing operations
@@ -374,6 +417,7 @@ void Game::Draw()
 
 	//Update screen
 	SDL_RenderPresent(Renderer);
+	}
 
 	SDL_Delay(10);	// 1000/10 = 100 fps max
 }

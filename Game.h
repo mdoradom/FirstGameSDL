@@ -23,13 +23,14 @@ public:
 	bool Init();
 	bool LoadImages();
 	void Release();
+	bool DisplayMenu();
 	void SpawnEnemies();
 	bool Input();
 	bool Update();
 	void Draw();
 
 private:
-	SDL_Texture* background_texture, * spaceship_texture, * shot_texture, * enemy_texture;
+	SDL_Texture* background_texture, * spaceship_texture, * shot_texture, * enemy_texture, *menu_texture;
 
 	SDL_Window *Window;
 	SDL_Renderer *Renderer;

@@ -116,6 +116,13 @@ bool Entity::GetRoll() {
 	return roll;
 }
 
+void Entity::SetExitMenu(bool ex) {
+	exitMenu = ex;
+}
+
+bool Entity::GetExitMenu() {
+	return exitMenu;
+}
 
 void Entity::SetHeith(int h)
 {
