@@ -100,6 +100,7 @@ bool Game::DisplayMenu() {
 		SDL_RenderPresent(Renderer);
 
 		if (keys[SDL_SCANCODE_1] == KEY_DOWN) {
+			audio.PlayMusic("assets/Capybara.ogg", 0.5F);
 			Scene.SetExitMenu(true);
 		}
 
@@ -271,8 +272,9 @@ bool Game::Update()
 			{
 				audio.PlayMusic("assets/DarkSouls_Gwyn_Lord_of_Cinder.ogg");
 			}
+			else if(god_mode == false && !Boss.IsAlive())
 			{
-				audio.PlayMusic("assets/Volume_Alpha_18_Sweden.ogg", 0.5F);
+				audio.PlayMusic("assets/Capybara.ogg", 0.5F);
 			}
 		}
 		if (keys[SDL_SCANCODE_F2] == KEY_DOWN) audio.PlayMusic("assets/Never_Gonna_Give_You_Up.ogg");
